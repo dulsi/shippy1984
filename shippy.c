@@ -1201,12 +1201,12 @@ void InitShippy()
     
   
     gamestate = SPLASH;
-    waitforkey=700;
+    waitforkey = 180;
     done = 0;
     level = 0;
     shipwait = 0;
     gameover = 0;
-    operational=600;
+    operational = 150;
 
 }
 
@@ -1218,8 +1218,27 @@ void ExecShippy()
     {
 
         case SPLASH:
+            if(operational==150)
+            {
+                SYSTEM_CLEARSCREEN();
+            }
+            if(operational>30)
+            {
+                int diff = 150 - operational;
+                PrintMessage("SHIPPY1984 BIOS POST",8,8,TEXT_CYAN);
+                PrintMessage("ROM 1 0X01",8,24,TEXT_RED);
+                PrintMessage("ROM 2 0X02",8,32,TEXT_RED);
+                PrintMessage("GFX 1 0X03",8,40,TEXT_RED);
+                PrintMessage("SFX 1 0X04",8,48,TEXT_RED);
+                PrintMessage("MUS 1 0X05",8,56,TEXT_RED);
+                if(diff>20) PrintMessage("OK!",104,24,TEXT_YELLOW);
+                if(diff>40) PrintMessage("OK!",104,32,TEXT_YELLOW);
+                if(diff>60) PrintMessage("OK!",104,40,TEXT_YELLOW);
+                if(diff>80) PrintMessage("OK!",104,48,TEXT_YELLOW);
+                if(diff>100) PrintMessage("OK!",104,56,TEXT_YELLOW);
+            }
 
-            if(operational==600)
+            if(operational==30)
             {
                 SYSTEM_BG(DATADIR "splash.bmp");
             }
@@ -1228,10 +1247,6 @@ void ExecShippy()
             {
                 --operational;
                 if(operational==0) audio_play(DATADIR "splash.wav");
-            }
-            if(operational==120)
-            {
-                SYSTEM_BG(DATADIR "splash2.bmp");
             }
             if(waitforkey==0)
             {
