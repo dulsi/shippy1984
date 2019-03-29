@@ -4,7 +4,15 @@ Music is copyright neoblaze 2004.
 http://ship84.sourceforge.net
 */
 
+#ifdef __unix__
+/* this must be done before the first include of unistd.h for setresgid */
+#define _GNU_SOURCE 
+#include <unistd.h>
+#endif
+#include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include "shippy.h"
 
 #define TEXT_WHITE 0
@@ -97,6 +105,13 @@ char currchar = 'A';
 int operational = 0;
 int missedshots = 0;
 int firedshots = 0;
+
+FILE *highscore_fp;
+
+int start_windowed  = 0;
+int use_arcade_mode = 0;
+int screen_width  = 640;
+int screen_height = 480;
 
 int compare(const void *a, const void *b)
 {
@@ -299,10 +314,7 @@ void NewGame(int mlevel)
 {
     int increment;
     int adder;
-    int accuracy;
-    int courage;
     int bonus;
-    float floatop;
 
     shots = 0;
     powerupframe = 0;
@@ -590,7 +602,6 @@ void DoAi(int number)
     if(ShippyObjects[number].used==0) return;
     int increment;
     int runsim;
-    int tx,ty;
 
     switch(ShippyObjects[number].type)
     {
@@ -656,7 +667,7 @@ void DoAi(int number)
                                     if(shots<10)
                                     {
                                         AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y,0,0,0,NULL,0,0);
-                                        audio_play("data/shot.wav");
+                                        audio_play(DATADIR "shot.wav");
                                         ++shots;
                                         ++firedshots;
                                     }
@@ -670,7 +681,7 @@ void DoAi(int number)
                                 {
                                     if(shots<6)
                                     {
-                                        audio_play("data/helix.wav");
+                                        audio_play(DATADIR "helix.wav");
                                         AddObject(BULLWAVE, ShippyObjects[number].x-6, ShippyObjects[number].y-8,0,-16,0,NULL,0,0);
                                         AddObject(BULLWAVE, ShippyObjects[number].x+6, ShippyObjects[number].y-8,0,16,0,NULL,0,0);
                                         shots+=2;
@@ -693,7 +704,7 @@ void DoAi(int number)
                             if(shots<3)
                             {
                                 AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y,0,0,0,NULL,0,0);
-                                audio_play("data/shot.wav");
+                                audio_play(DATADIR "shot.wav");
                                 ++shots;
                                 ++firedshots;
                             }
@@ -802,7 +813,7 @@ void DoAi(int number)
                 --ShippyObjects[number].special;
             }
 
-            if(ShippyObjects[number].x<-7 || ShippyObjects[number].x>247 && ShippyObjects[number].type==ENEMYSHIPPY)
+            if(ShippyObjects[number].x<-7 || (ShippyObjects[number].x>247 && ShippyObjects[number].type==ENEMYSHIPPY))
             {
                 ShippyObjects[number].y+=16;
                 ShippyObjects[number].level=-ShippyObjects[number].level;
@@ -837,7 +848,7 @@ void DoAi(int number)
                         }
                         diedlast = 1;
                     
-                        audio_play("data/die.wav");
+                        audio_play(DATADIR "die.wav");
                         ShippyObjects[number].type=EXPLOSION;
                         ShippyObjects[number].special=4;
                     }
@@ -937,7 +948,7 @@ void DoAi(int number)
                                                  0);
                                          
                                      }
-                                    audio_play("data/hit.wav");
+                                    audio_play(DATADIR "hit.wav");
                                 break;
 
                                 case ENEMYSHIPPY:
@@ -955,7 +966,7 @@ void DoAi(int number)
                                                  0,
                                                  0);
                                      }
-                                    audio_play("data/hit.wav");
+                                    audio_play(DATADIR "hit.wav");
                                      break;
 
 				 case FEZBOMB:
@@ -976,7 +987,7 @@ void DoAi(int number)
                                                  0,
                                                  0);
                                      }
-                                    audio_play("data/hit.wav");
+                                    audio_play(DATADIR "hit.wav");
                                     break;
                             
                             }
@@ -1059,7 +1070,7 @@ void DoAi(int number)
                         }
 
                         diedlast = 1;                    
-                        audio_play("data/die.wav");
+                        audio_play(DATADIR "die.wav");
                         ShippyObjects[number].type=EXPLOSION;
                         ShippyObjects[number].special=4;
                         return;
@@ -1097,42 +1108,27 @@ void DoAi(int number)
 
 void StoreHS()
 {
-    FILE *savehs = NULL;
-    savehs = fopen("data/scores.lst","wb");
+    size_t silence_warnings;
+    
+    if(highscore_fp==NULL) return;
 
-    if(savehs==NULL) return;
-
-    fwrite(winners,sizeof(struct HISCORE), 14, savehs);
-    fclose(savehs);
-    return;
-
-
+    rewind(highscore_fp);
+    silence_warnings = fwrite(winners,sizeof(struct HISCORE), 14, highscore_fp);
 }
 
 
 void RestoreHS()
 {
     int i;    
-    FILE *loadhs = NULL;
-    
-    loadhs = fopen("data/scores.lst","rb");
 
-    if(loadhs!=NULL)
+    if(highscore_fp!=NULL)
     {
-        if(fread(winners,sizeof(struct HISCORE), 14, loadhs)==14)
+        if(fread(winners,sizeof(struct HISCORE), 14, highscore_fp)==14)
         {
-            fclose(loadhs);
             highscore=winners[0].score;
             return;
         }
-        else
-        {
-            fclose(loadhs);
-        }
-    
-    
     }
-
 
     strcpy(winners[0].name,"RAB");
     winners[0].level = 14;
@@ -1225,17 +1221,17 @@ void ExecShippy()
 
             if(operational==600)
             {
-                SYSTEM_BG("data/splash.bmp");
+                SYSTEM_BG(DATADIR "splash.bmp");
             }
             
             if(operational>0)
             {
                 --operational;
-                if(operational==0) audio_play("data/splash.wav");
+                if(operational==0) audio_play(DATADIR "splash.wav");
             }
             if(operational==120)
             {
-                SYSTEM_BG("data/splash2.bmp");
+                SYSTEM_BG(DATADIR "splash2.bmp");
             }
             if(waitforkey==0)
             {
@@ -1287,13 +1283,13 @@ void ExecShippy()
             }
             
            
-            if(jdirx == -2)
+            if(jdirx <= -1)
             {
                 --currchar;
                 if(currchar<'A') currchar = 'Z';
                 waitforkey=15;
             }
-            if(jdirx == 2)
+            if(jdirx >= 1)
             {
                 ++currchar;
                 if(currchar>'Z') currchar = 'A';
@@ -1339,7 +1335,7 @@ void ExecShippy()
         {
             ShippyObjects[0].lives++;
             extralife *= 2;
-            audio_play("data/fanfare.wav");
+            audio_play(DATADIR "fanfare.wav");
         
         }
         if(leftmonsters>0 && done == 0 && gameover==0)
@@ -1388,7 +1384,7 @@ void ExecShippy()
 		}
 		for(increment=0;increment<14;++increment) winners[increment].last=0;
                 gamestate = INITIALS;
-                audio_music("data/score.xm");
+                audio_music(DATADIR "score.xm");
                 waitforkey=30;
                 operational = 0;
             }
@@ -1401,7 +1397,7 @@ void ExecShippy()
             {
                 NewGame(-1);
                 operational = 1;
-                if(gamestate==TITLE) audio_music("data/title.xm");
+                if(gamestate==TITLE) audio_music(DATADIR "title.xm");
             }
             
             if(done==0 && operational==1)
@@ -1429,7 +1425,7 @@ void ExecShippy()
                     else
                     {
     
-                        audio_music("data/shippy.xm");
+                        audio_music(DATADIR "shippy.xm");
                         gamestate = GAME;
                         operational = 0;
                     }
@@ -1467,7 +1463,7 @@ void ExecShippy()
         {
             ShippyObjects[0].lives++;
             extralife *= 2;
-            audio_play("data/fanfare.wav");
+            audio_play(DATADIR "fanfare.wav");
         
         }
 
@@ -1510,11 +1506,61 @@ void ExecShippy()
     }
 }
 
-void SHIPPY_MAIN()
+static void show_usage(char *name, FILE *f)
 {
-    int increment;
+    fprintf(f,
+        "Usage: %s [-w] [-a] [-h]\n\n"
+        "Options:\n"
+        "-w\tWindowed, start in a window (default fullscreen)\n"
+        "-a\tArcade, use an arcade-ish video mode with scanlines (CRT only!)\n"
+        "-h\tHelp, display this help and exit\n", name);
+}
+
+int SHIPPY_MAIN(int argc, char *argv[])
+{
+    int i;
+#ifdef __unix__
+    gid_t realgid;
+
+    highscore_fp = fopen("/var/lib/games/shippy.hs", "r+");
+    
+    realgid = getgid();
+    if (setresgid(-1, realgid, realgid) != 0) {
+        perror("Could not drop setgid privileges.  Aborting.");
+        return 1;
+    }
+#else
+    highscore_fp = fopen("data/scores.lst","r+b");
+#endif
+    
+    for (i = 1; i < argc; i++)
+    {
+        if (!strcmp(argv[i], "-w"))
+            start_windowed = 1;
+        else if (!strcmp(argv[i], "-a"))
+        {
+            use_arcade_mode = 1;
+            screen_width  = 480;
+            screen_height = 320;
+        }
+        else if (!strcmp(argv[i], "-h") ||
+            !strcmp(argv[i], "-?") ||
+            !strcmp(argv[i], "-help") ||
+            !strcmp(argv[i], "--help"))
+        {
+            show_usage(argv[0], stdout);
+            return 0;
+        }
+        else
+        {
+            fprintf(stderr, "Error: unknown argument: %s\n", argv[i]);
+            show_usage(argv[0], stderr);
+            return 1;
+        }
+    }
+        
     srand(time(0));
-    if(SYSTEM_INIT()!=0) return;
+    if(SYSTEM_INIT()!=0) return 1;
     InitShippy();
     while(done==0)
     {
@@ -1533,9 +1579,9 @@ void SHIPPY_MAIN()
                 countframes=0;
         	}
 
-            for(increment=0;increment<MAXSHIPPY;++increment)
+            for(i=0;i<MAXSHIPPY;++i)
             {
-                if(gamestate!=INITIALS) RenderShippy(increment);
+                if(gamestate!=INITIALS) RenderShippy(i);
             }
             DrawOverlay();
             SYSTEM_FINISHRENDER();
@@ -1544,6 +1590,7 @@ void SHIPPY_MAIN()
     }
     StoreHS();
     SYSTEM_CLEAN();
+    return 0;
 }
 
 

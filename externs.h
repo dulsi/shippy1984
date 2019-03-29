@@ -10,5 +10,9 @@ extern int waitforkey;
 extern int done;
 extern int gscale;
 extern volatile int objectsynch;
+extern int start_windowed;
+extern int use_arcade_mode;
+extern int screen_width;
+extern int screen_height;
 
 #endif

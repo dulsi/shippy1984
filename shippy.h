@@ -3,6 +3,10 @@
 
 #include "externs.h"
 
+#ifndef DATADIR
+#define DATADIR "data/"
+#endif
+
 void Start_Audio();
 void audio_start();
 void audio_play(char *wav);
@@ -14,13 +18,13 @@ void syncher();
 void SCRAPPABLE_CLOSE();
 void SYSTEM_CLEANBMP();
 void SYSTEM_SETVID();
-int SYSTEM_BG();
+void SYSTEM_BG();
 int SYSTEM_INIT();
 int SYSTEM_CLEAN();
 int SYSTEM_GETKEY(int scancode);
-int SYSTEM_FINISHRENDER();
+void SYSTEM_FINISHRENDER();
 int SYSTEM_CLEARSCREEN();
-int SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy);
+void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy);
 void SYSTEM_POLLINPUT();
 void SYSTEM_IDLE();
 int compare(const void *a, const void *b);
@@ -36,7 +40,6 @@ void StoreHS();
 void RestoreHS();
 void InitShippy();
 void ExecShippy();
-void SHIPPY_MAIN();
-
+int SHIPPY_MAIN(int argc, char *argv[]);
 
 #endif

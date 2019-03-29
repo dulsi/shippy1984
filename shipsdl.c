@@ -1,3 +1,5 @@
+#include <string.h>
+#include <stdlib.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_mixer.h>
 #include "shippy.h"
@@ -5,6 +7,7 @@
 SDL_Surface *screen = NULL;
 SDL_Surface *BackBuffer = NULL;
 SDL_Surface *Graphics = NULL;
+SDL_Joystick *Joystick = NULL;
 Uint8 key[1337];
 
 Uint32 CLEARCOLOR = 0;
@@ -164,9 +167,9 @@ void audio_end()
     
 void End_Audio()
 {
+    audio_end();
     Mix_HaltMusic();
     Mix_CloseAudio();
-    audio_end();
 }
 
     
@@ -186,7 +189,11 @@ void SYSTEM_CLEANBMP()
 
 void SYSTEM_SETVID()
 {
-    screen = SDL_SetVideoMode(480, 320, 8, SDL_SWSURFACE | SDL_HWPALETTE);
+    Uint32 flags = SDL_SWSURFACE | SDL_HWPALETTE | SDL_FULLSCREEN;
+    if (start_windowed)
+        flags &= ~SDL_FULLSCREEN;
+    SDL_ShowCursor(SDL_DISABLE);
+    screen = SDL_SetVideoMode(screen_width, screen_height, 8, flags);
     if ( screen == NULL )
     {
         return;
@@ -194,8 +201,8 @@ void SYSTEM_SETVID()
 
     SYSTEM_CLEANBMP();
 
-    Graphics = CreateSurfaceFromBitmap("data/graphics.bmp",SDL_SWSURFACE|SDL_SRCCOLORKEY);
-    BackBuffer= CreateSurfaceFromBitmap("data/splash.bmp",SDL_SWSURFACE|SDL_SRCCOLORKEY);
+    Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp",SDL_SWSURFACE|SDL_SRCCOLORKEY);
+    BackBuffer= CreateSurfaceFromBitmap(DATADIR "splash.bmp",SDL_SWSURFACE|SDL_SRCCOLORKEY);
     SDL_SetColors(screen, Graphics->format->palette->colors, 0,Graphics->format->palette->ncolors);
     SDL_SetColorKey(Graphics,SDL_SRCCOLORKEY, SDL_MapRGB(Graphics->format, 255, 0, 255));
     SDL_SetColorKey(BackBuffer,SDL_SRCCOLORKEY, SDL_MapRGB(Graphics->format, 255, 0, 255));
@@ -208,7 +215,7 @@ void SYSTEM_SETVID()
 int SYSTEM_INIT()
 {
    
-    if((SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO)==-1))
+    if((SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_JOYSTICK)==-1))
     { 
         return 1;
     }
@@ -219,6 +226,8 @@ int SYSTEM_INIT()
     SDL_WM_SetCaption("Shippy1984 by Ryan Broomfield SDL VERSION", NULL);
 
     audio_start();
+    
+    Joystick = SDL_JoystickOpen(0);
 
     return 0;
 }
@@ -227,6 +236,8 @@ int SYSTEM_CLEAN()
 {
     SYSTEM_CLEANBMP();
     End_Audio();
+    if (Joystick)
+        SDL_JoystickClose(Joystick);
     return 0;
 }
 
@@ -236,7 +247,7 @@ int SYSTEM_GETKEY(int scancode)
 
 }
 
-int SYSTEM_BG(char *bmp)
+void SYSTEM_BG(char *bmp)
 {
     if(BackBuffer!=NULL) SDL_FreeSurface(BackBuffer);
     BackBuffer= CreateSurfaceFromBitmap(bmp,SDL_SWSURFACE|SDL_SRCCOLORKEY);
@@ -247,38 +258,24 @@ int SYSTEM_BG(char *bmp)
 
 
 /* NEW SYSTEM_FINISHRENDER() BY JONATHAN GILBERT 1-28-2004 */ 
-int SYSTEM_FINISHRENDER()
+void SYSTEM_FINISHRENDER()
 {
-  int x, y, w;
-  Uint8 *in;
-  Uint16 *out;
- 
+  src.x = 0;
+  src.y = 0;
+  src.w = 240;
+  src.h = 160;
+  
+  dest.x = 0;
+  dest.y = 0;
+  dest.w = screen_width;
+  dest.h = screen_height;
+  
   if (SDL_MUSTLOCK(BackBuffer))
     SDL_LockSurface(BackBuffer);
   if (SDL_MUSTLOCK(screen))
     SDL_LockSurface(screen);
- 
-  in = BackBuffer->pixels;
-  out = (Uint16 *)screen->pixels;
- 
-  w = BackBuffer->pitch;
- 
-  for (y=0; y<160; y++)
-  {
-    for (x=0; x<w; x += 2)
-    {
-      Uint32 sample = *(Uint16 *)&in[x];
- 
-      sample = (sample & 0xFF) | (sample >> 8 << 16);
-      sample *= 257;
- 
-      *(Uint32 *)(&out[x]) = sample;
-      *(Uint32 *)(&out[x + w]) = sample;
-    }
- 
-    in += w;
-    out += w + w;
-  }
+
+  SDL_SoftStretch(BackBuffer, &src, screen, &dest);
  
   if (SDL_MUSTLOCK(BackBuffer))
     SDL_UnlockSurface(BackBuffer);
@@ -294,10 +291,12 @@ int SYSTEM_CLEARSCREEN()
     if(SDL_FillRect(BackBuffer, NULL, CLEARCOLOR)==-1)
     {
         printf("CLS ERROR! \n");
+        return 1;
     }
+    return 0;
 }
 
-int SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
+void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 {
     src.x = sx;
     src.y = sy;
@@ -316,7 +315,6 @@ int SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 
 void SYSTEM_POLLINPUT()
 {
-    int tx,ty;
     jaction = 0;
     jsecond = 0;
     jdirx = 0;
@@ -324,26 +322,28 @@ void SYSTEM_POLLINPUT()
 
 
     if(key[SDLK_ESCAPE]) done = 1;
+    if(key[SDLK_RETURN] && key[SDLK_LALT])
+        SDL_WM_ToggleFullScreen(screen);
+    
     if(waitforkey>0)
     {
         --waitforkey;
         return;
     }
 
-/*    if(num_joysticks>0)
-    {
-        poll_joystick();
-        jaction = joy[0].button[0].b;
-        jsecond = joy[0].button[1].b;
-        jdirx = (joy[0].stick[0].axis[0].d1 - joy[0].stick[0].axis[0].d2)*2;
-        jdiry = (joy[0].stick[0].axis[1].d1 - joy[0].stick[0].axis[1].d2);
-    }
-*/
-
     jdirx = 0;
     jdiry = 0;
     jaction = 0;
     jsecond = 0;
+
+    if(Joystick)
+    {
+        SDL_JoystickUpdate();
+        jaction = SDL_JoystickGetButton(Joystick, 0);
+        jsecond = SDL_JoystickGetButton(Joystick, 1);
+        jdirx = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
+        jdiry = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
+    }
 
     if(jdirx == 0) jdirx=(key[SDLK_RIGHT] - key[SDLK_LEFT]) * 2;
     if(jdiry == 0) jdiry=key[SDLK_DOWN] - key[SDLK_UP];
@@ -356,6 +356,10 @@ void SYSTEM_POLLINPUT()
 void SYSTEM_IDLE()
 {
     Uint32 test = SDL_GetTicks();
+
+    if (test < timing)
+        SDL_Delay(1);
+
     while(test>timing)
     {
         timing+=14;
@@ -387,7 +391,5 @@ void SYSTEM_IDLE()
 
 int main(int argc, char*argv[])
 {
-
-	SHIPPY_MAIN();
-
+	return SHIPPY_MAIN(argc, argv);
 }
