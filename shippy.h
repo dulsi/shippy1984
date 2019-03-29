@@ -19,6 +19,7 @@ void SCRAPPABLE_CLOSE();
 void SYSTEM_CLEANBMP();
 void SYSTEM_SETVID();
 void SYSTEM_BG();
+void SYSTEM_DRAW_BG();
 int SYSTEM_INIT();
 int SYSTEM_CLEAN();
 int SYSTEM_GETKEY(int scancode);

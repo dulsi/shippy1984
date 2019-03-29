@@ -1,12 +1,23 @@
 #include <string.h>
 #include <stdlib.h>
-#include <SDL/SDL.h>
-#include <SDL/SDL_mixer.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
 #include "shippy.h"
 
-SDL_Surface *screen = NULL;
-SDL_Surface *BackBuffer = NULL;
-SDL_Surface *Graphics = NULL;
+#define SHIPPY_LEFT 0
+#define SHIPPY_RIGHT 1
+#define SHIPPY_DOWN 2
+#define SHIPPY_UP 3
+#define SHIPPY_LCTRL 4
+#define SHIPPY_BACKSPACE 5
+#define SHIPPY_ESCAPE 6
+#define SHIPPY_RETURN 7
+#define SHIPPY_LALT 8
+
+SDL_Window *screen = NULL;
+SDL_Renderer *renderer = NULL;
+SDL_Texture *BackBuffer = NULL;
+SDL_Texture *Graphics = NULL;
 SDL_Joystick *Joystick = NULL;
 Uint8 key[1337];
 
@@ -24,21 +35,21 @@ volatile int objectsynch = 0;
 Uint32 timing;
 
 #define MAX_SAMPLES 8
-SDL_Surface *CreateSurfaceFromBitmap(char *bmpfile,Uint32 flags)
+SDL_Texture *CreateSurfaceFromBitmap(char *bmpfile,Uint32 flags)
 {
 
     SDL_Surface *junktemp;
-    SDL_Surface *junktemp2;
+//    SDL_Surface *junktemp2;
 
     junktemp=SDL_LoadBMP(bmpfile);
     
-    junktemp2=SDL_ConvertSurface(junktemp, junktemp->format,flags);
+//    junktemp2=SDL_DisplayFormat(junktemp);
+//    SDL_FreeSurface(junktemp);
+    SDL_SetColorKey(junktemp,SDL_TRUE, SDL_MapRGB(junktemp->format, 255, 0, 255));
+    SDL_Texture *sdlTexture = SDL_CreateTextureFromSurface(renderer, junktemp);
     SDL_FreeSurface(junktemp);
-    
-    junktemp=SDL_DisplayFormat(junktemp2);
-    SDL_FreeSurface(junktemp2);
 
-    return junktemp;
+    return sdlTexture;
 }
 
 int audio_op=0;
@@ -180,8 +191,8 @@ int gscale = 1;
 
 void SYSTEM_CLEANBMP()
 {
-    if(BackBuffer!=NULL) SDL_FreeSurface(BackBuffer);
-    if(Graphics!=NULL) SDL_FreeSurface(Graphics);
+    if(BackBuffer!=NULL) SDL_DestroyTexture(BackBuffer);
+    if(Graphics!=NULL) SDL_DestroyTexture(Graphics);
     BackBuffer=NULL;
     Graphics=NULL;
 }
@@ -189,11 +200,16 @@ void SYSTEM_CLEANBMP()
 
 void SYSTEM_SETVID()
 {
-    Uint32 flags = SDL_SWSURFACE | SDL_HWPALETTE | SDL_FULLSCREEN;
+    Uint32 flags = /*SDL_SWSURFACE | SDL_HWPALETTE |*/ SDL_WINDOW_FULLSCREEN;
     if (start_windowed)
-        flags &= ~SDL_FULLSCREEN;
+        flags &= ~SDL_WINDOW_FULLSCREEN;
+    screen = SDL_CreateWindow("Shippy1984 by Ryan Broomfield SDL2 VERSION",
+        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, screen_height,
+        flags);
     SDL_ShowCursor(SDL_DISABLE);
-    screen = SDL_SetVideoMode(screen_width, screen_height, 8, flags);
+    renderer = SDL_CreateRenderer(screen, -1, 0);
+    SDL_RenderSetLogicalSize(renderer, 240, 160);
+    
     if ( screen == NULL )
     {
         return;
@@ -201,14 +217,14 @@ void SYSTEM_SETVID()
 
     SYSTEM_CLEANBMP();
 
-    Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp",SDL_SWSURFACE|SDL_SRCCOLORKEY);
-    BackBuffer= CreateSurfaceFromBitmap(DATADIR "splash.bmp",SDL_SWSURFACE|SDL_SRCCOLORKEY);
-    SDL_SetColors(screen, Graphics->format->palette->colors, 0,Graphics->format->palette->ncolors);
-    SDL_SetColorKey(Graphics,SDL_SRCCOLORKEY, SDL_MapRGB(Graphics->format, 255, 0, 255));
-    SDL_SetColorKey(BackBuffer,SDL_SRCCOLORKEY, SDL_MapRGB(Graphics->format, 255, 0, 255));
-    SDL_SetClipRect(screen, NULL);
+    Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp",0/*SDL_SWSURFACE|SDL_SRCCOLORKEY*/);
+    BackBuffer= CreateSurfaceFromBitmap(DATADIR "splash.bmp",0/*SDL_SWSURFACE|SDL_SRCCOLORKEY*/);
+//    SDL_SetColors(screen, Graphics->format->palette->colors, 0,Graphics->format->palette->ncolors);
+/*    SDL_SetClipRect(screen, NULL);
     SDL_FillRect(BackBuffer, NULL, CLEARCOLOR);
-    CLEARCOLOR = SDL_MapRGB(Graphics->format, 0, 0, 0);
+    CLEARCOLOR = SDL_MapRGB(Graphics->format, 0, 0, 0);*/
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
 }
 
 
@@ -223,7 +239,6 @@ int SYSTEM_INIT()
 
     atexit(SDL_Quit);
     SYSTEM_SETVID();    
-    SDL_WM_SetCaption("Shippy1984 by Ryan Broomfield SDL VERSION", NULL);
 
     audio_start();
     
@@ -247,23 +262,37 @@ int SYSTEM_GETKEY(int scancode)
 
 }
 
-void SYSTEM_BG(char *bmp)
+void SYSTEM_BG()
 {
-    if(BackBuffer!=NULL) SDL_FreeSurface(BackBuffer);
+/*    if(BackBuffer!=NULL) SDL_FreeSurface(BackBuffer);
     BackBuffer= CreateSurfaceFromBitmap(bmp,SDL_SWSURFACE|SDL_SRCCOLORKEY);
     if(BackBuffer==NULL) done=1;
-    else SDL_SetColorKey(BackBuffer,SDL_SRCCOLORKEY, SDL_MapRGB(Graphics->format, 255, 0, 255));
-
+    else SDL_SetColorKey(BackBuffer,SDL_SRCCOLORKEY, SDL_MapRGB(Graphics->format, 255, 0, 255));*/
 }
 
-void SYSTEM_DRAW_BG()
+void SYSTEM_DRAW_BG(char *bmp)
 {
+    src.x = 0;
+    src.y = 0;
+    src.w=240;// /2;
+    src.h=160;// /2;
+    dest.x=0;
+    dest.y=0;
+    dest.w=240;
+    dest.h=160;
+    if(SDL_RenderCopy(renderer, BackBuffer,&src,&dest)!=0)
+    {
+        printf("SYSTEM_BLIT ERROR! \n");
+    }
 }
+
 
 /* NEW SYSTEM_FINISHRENDER() BY JONATHAN GILBERT 1-28-2004 */ 
 void SYSTEM_FINISHRENDER()
 {
-  src.x = 0;
+    SDL_RenderPresent(renderer);
+
+/*  src.x = 0;
   src.y = 0;
   src.w = 240;
   src.h = 160;
@@ -285,17 +314,19 @@ void SYSTEM_FINISHRENDER()
   if (SDL_MUSTLOCK(screen))
     SDL_UnlockSurface(screen);
  
-  SDL_UpdateRect(screen, 0, 0, 0, 0);
+  SDL_UpdateRect(screen, 0, 0, 0, 0);*/
 }
 
 
 int SYSTEM_CLEARSCREEN()
 {
-    if(SDL_FillRect(BackBuffer, NULL, CLEARCOLOR)==-1)
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+/*    if(SDL_FillRect(BackBuffer, NULL, CLEARCOLOR)==-1)
     {
         printf("CLS ERROR! \n");
         return 1;
-    }
+    }*/
     return 0;
 }
 
@@ -305,11 +336,11 @@ void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
     src.y = sy;
     src.w=szx;
     src.h=szy;
-    dest.x=x;
-    dest.y=y;
-    dest.w=szx;
-    dest.h=szy;
-    if(SDL_BlitSurface(Graphics,&src,BackBuffer,&dest)==-1)
+    dest.x=x;// * 2;
+    dest.y=y;// * 2;
+    dest.w=szx;// * 2;
+    dest.h=szy;// * 2;
+    if(SDL_RenderCopy(renderer, Graphics,&src,&dest)!=0)
     {
         printf("SYSTEM_BLIT ERROR! \n");
     }
@@ -324,9 +355,9 @@ void SYSTEM_POLLINPUT()
     jdiry = 0;
 
 
-    if(key[SDLK_ESCAPE]) done = 1;
-    if(key[SDLK_RETURN] && key[SDLK_LALT])
-        SDL_WM_ToggleFullScreen(screen);
+    if(key[SHIPPY_ESCAPE]) done = 1;
+/*    if(key[SHIPPY_RETURN] && key[SHIPPY_LALT])
+        SDL_WM_ToggleFullScreen(screen);*/
     
     if(waitforkey>0)
     {
@@ -348,10 +379,10 @@ void SYSTEM_POLLINPUT()
         jdiry = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
     }
 
-    if(jdirx == 0) jdirx=(key[SDLK_RIGHT] - key[SDLK_LEFT]) * 2;
-    if(jdiry == 0) jdiry=key[SDLK_DOWN] - key[SDLK_UP];
-    if(jaction == 0) jaction = key[SDLK_LCTRL];
-    if(jsecond == 0) jsecond = key[SDLK_BACKSPACE];
+    if(jdirx == 0) jdirx=(key[SHIPPY_RIGHT] - key[SHIPPY_LEFT]) * 2;
+    if(jdiry == 0) jdiry=key[SHIPPY_DOWN] - key[SHIPPY_UP];
+    if(jaction == 0) jaction = key[SHIPPY_LCTRL];
+    if(jsecond == 0) jsecond = key[SHIPPY_BACKSPACE];
 
 
 }
@@ -380,13 +411,52 @@ void SYSTEM_IDLE()
         {
             done=1;
         }
-        if(event.type==SDL_KEYDOWN)
+        if ((event.type==SDL_KEYDOWN) || (event.type==SDL_KEYUP))
         {
-            key[event.key.keysym.sym]=1;
-        }
-        else if(event.type==SDL_KEYUP)
-        {
-            key[event.key.keysym.sym]=0;
+            int keyIndx = -1;
+            switch (event.key.keysym.sym)
+            {
+                case SDLK_LEFT:
+                    keyIndx = SHIPPY_LEFT;
+                    break;
+                case SDLK_RIGHT:
+                    keyIndx = SHIPPY_RIGHT;
+                    break;
+                case SDLK_DOWN:
+                    keyIndx = SHIPPY_DOWN;
+                    break;
+                case SDLK_UP:
+                    keyIndx = SHIPPY_UP;
+                    break;
+                case SDLK_LCTRL:
+                    keyIndx = SHIPPY_LCTRL;
+                    break;
+                case SDLK_BACKSPACE:
+                    keyIndx = SHIPPY_BACKSPACE;
+                    break;
+                case SDLK_ESCAPE:
+                    keyIndx = SHIPPY_ESCAPE;
+                    break;
+                case SDLK_RETURN:
+                    keyIndx = SHIPPY_RETURN;
+                    break;
+                case SDLK_LALT:
+                    keyIndx = SHIPPY_LALT;
+                    break;
+                default:
+                    break;
+            }
+            if (keyIndx == -1)
+            {
+            }
+            else if (event.type==SDL_KEYDOWN)
+            {
+                key[keyIndx]=1;
+            }
+            else if(event.type==SDL_KEYUP)
+            {
+                key[keyIndx]=0;
+            }
         }
     }
     

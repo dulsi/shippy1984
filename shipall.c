@@ -231,9 +231,12 @@ void SYSTEM_BG(char *bmp)
     if(mytest2==NULL) return;
 	blit(mytest2,BackBuffer,0,0,0,0,240,160);
 	destroy_bitmap(mytest2);
-
-
 }
+
+void SYSTEM_DRAW_BG()
+{
+}
+
 int SYSTEM_INIT()
 {
     if (allegro_init())

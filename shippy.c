@@ -1242,6 +1242,10 @@ void ExecShippy()
             {
                 SYSTEM_BG(DATADIR "splash.bmp");
             }
+            if(operational<=30)
+            {
+                SYSTEM_DRAW_BG();
+            }
             
             if(operational>0)
             {
