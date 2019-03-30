@@ -640,6 +640,7 @@ void DoAi(int number)
 				AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
 				AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
 				waitforkey = 480;
+				shipwait = 600;
 
 				gameover = 1;
 			}
@@ -1208,7 +1209,7 @@ void InitShippy()
 	waitforkey = 180;
 	done = 0;
 	level = 0;
-	shipwait = 360;
+	shipwait = 600;
 	gameover = 0;
 	operational = 150;
 
@@ -1416,7 +1417,9 @@ void ExecShippy()
 			if (score > highscore)
 				highscore = score;
 			PrintMessage("GAME OVER!", 88, 112, TEXT_RED);
-			if (jaction)
+			if (shipwait > 0)
+				shipwait--;
+			if ((jaction) || (shipwait == 0))
 			{
 				if (score <= winners[13].score)
 				{
