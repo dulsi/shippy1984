@@ -21,7 +21,6 @@ SDL_Texture *Graphics = NULL;
 SDL_Joystick *Joystick = NULL;
 Uint8 key[1337];
 
-Uint32 CLEARCOLOR = 0;
 SDL_Rect src;
 SDL_Rect dest;
 
@@ -39,12 +38,9 @@ SDL_Texture *CreateSurfaceFromBitmap(char *bmpfile, Uint32 flags)
 {
 
 	SDL_Surface *junktemp;
-//    SDL_Surface *junktemp2;
 
 	junktemp = SDL_LoadBMP(bmpfile);
 
-//    junktemp2=SDL_DisplayFormat(junktemp);
-//    SDL_FreeSurface(junktemp);
 	SDL_SetColorKey(junktemp, SDL_TRUE, SDL_MapRGB(junktemp->format, 255, 0, 255));
 	SDL_Texture *sdlTexture = SDL_CreateTextureFromSurface(renderer, junktemp);
 	SDL_FreeSurface(junktemp);
@@ -201,8 +197,7 @@ void SYSTEM_CLEANBMP()
 
 void SYSTEM_SETVID()
 {
-	Uint32 flags =
-		/*SDL_SWSURFACE | SDL_HWPALETTE | */ SDL_WINDOW_FULLSCREEN;
+	Uint32 flags = SDL_WINDOW_FULLSCREEN;
 	if (start_windowed)
 		flags &= ~SDL_WINDOW_FULLSCREEN;
 	screen = SDL_CreateWindow("Shippy1984 by Ryan Broomfield SDL2 VERSION", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, screen_height, flags);
@@ -217,12 +212,8 @@ void SYSTEM_SETVID()
 
 	SYSTEM_CLEANBMP();
 
-	Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp", 0 /*SDL_SWSURFACE|SDL_SRCCOLORKEY */ );
-	BackBuffer = CreateSurfaceFromBitmap(DATADIR "splash.bmp", 0 /*SDL_SWSURFACE|SDL_SRCCOLORKEY */ );
-//    SDL_SetColors(screen, Graphics->format->palette->colors, 0,Graphics->format->palette->ncolors);
-/*    SDL_SetClipRect(screen, NULL);
-    SDL_FillRect(BackBuffer, NULL, CLEARCOLOR);
-    CLEARCOLOR = SDL_MapRGB(Graphics->format, 0, 0, 0);*/
+	Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp", 0);
+	BackBuffer = CreateSurfaceFromBitmap(DATADIR "splash.bmp", 0);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 }
@@ -273,8 +264,8 @@ void SYSTEM_DRAW_BG(char *bmp)
 {
 	src.x = 0;
 	src.y = 0;
-	src.w = 240;									// /2;
-	src.h = 160;									// /2;
+	src.w = 240;
+	src.h = 160;
 	dest.x = 0;
 	dest.y = 0;
 	dest.w = 240;
@@ -289,41 +280,12 @@ void SYSTEM_DRAW_BG(char *bmp)
 void SYSTEM_FINISHRENDER()
 {
 	SDL_RenderPresent(renderer);
-
-/*  src.x = 0;
-  src.y = 0;
-  src.w = 240;
-  src.h = 160;
-  
-  dest.x = 0;
-  dest.y = 0;
-  dest.w = screen_width;
-  dest.h = screen_height;
-  
-  if (SDL_MUSTLOCK(BackBuffer))
-    SDL_LockSurface(BackBuffer);
-  if (SDL_MUSTLOCK(screen))
-    SDL_LockSurface(screen);
-
-  SDL_SoftStretch(BackBuffer, &src, screen, &dest);
- 
-  if (SDL_MUSTLOCK(BackBuffer))
-    SDL_UnlockSurface(BackBuffer);
-  if (SDL_MUSTLOCK(screen))
-    SDL_UnlockSurface(screen);
- 
-  SDL_UpdateRect(screen, 0, 0, 0, 0);*/
 }
 
 int SYSTEM_CLEARSCREEN()
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
-/*    if(SDL_FillRect(BackBuffer, NULL, CLEARCOLOR)==-1)
-    {
-        printf("CLS ERROR! \n");
-        return 1;
-    }*/
 	return 0;
 }
 
@@ -333,10 +295,10 @@ void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 	src.y = sy;
 	src.w = szx;
 	src.h = szy;
-	dest.x = x;										// * 2;
-	dest.y = y;										// * 2;
-	dest.w = szx;									// * 2;
-	dest.h = szy;									// * 2;
+	dest.x = x;
+	dest.y = y;
+	dest.w = szx;
+	dest.h = szy;
 	if (SDL_RenderCopy(renderer, Graphics, &src, &dest) != 0)
 	{
 		printf("SYSTEM_BLIT ERROR! \n");
