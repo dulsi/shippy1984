@@ -1553,7 +1553,7 @@ void ExecShippy()
 			leftmonsters = 0;
 			level = 0;
 			gameover = 0;
-			operational = 29;
+			operational = 30;
 			NewGame(-2);
 			audio_music(NULL);
 		}
