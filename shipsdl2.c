@@ -115,20 +115,24 @@ void audio_music(char *mfile)
 
 	if (music != NULL)
 	{
+		Mix_HaltMusic();
 		Mix_FreeMusic(music);
+		music = NULL;
 	}
-	music = Mix_LoadMUS(mfile);
-	if (!music)
+	if (mfile != NULL)
 	{
-		printf("Mix_LoadMUS(%s): %s\n", mfile, Mix_GetError());
-		audio_op = 0;
+		music = Mix_LoadMUS(mfile);
+		if (!music)
+		{
+			printf("Mix_LoadMUS(%s): %s\n", mfile, Mix_GetError());
+			audio_op = 0;
+		}
+		else if (Mix_PlayMusic(music, -1) == -1)
+		{
+			printf("Mix_PlayMusic: %s\n", Mix_GetError());
+		}
+		// well, there's no music, but most games don't break without music...
 	}
-	else if (Mix_PlayMusic(music, -1) == -1)
-	{
-		printf("Mix_PlayMusic: %s\n", Mix_GetError());
-	}
-	// well, there's no music, but most games don't break without music...
-
 }
 
 void audio_exec()

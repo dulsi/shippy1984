@@ -1,7 +1,6 @@
 /*Shippy 1984 by Ryan Broomfield
 Source code and graphics are copyright Ryan Broomfield 2004.
 Music is copyright neoblaze 2004.
-http://ship84.sourceforge.net
 */
 
 #ifdef __unix__
@@ -21,21 +20,21 @@ http://ship84.sourceforge.net
 #define TEXT_CYAN 3
 
 #define SHIPPY 0
-#define BULLET 1
-#define BULLWAVE 2
-#define ORB 3
-#define ENEMYSHIPPY 4
-#define ENEMYHEART 5
-#define ENEMYBULLET 6
-#define ENEMYBHEART 7
-#define EXPLOSION 8
-#define POWERUP 9
-#define STAR 10
-#define PARTICLE 11
-#define LEVELMESSAGE 12
-#define MESSAGE 13
-#define ANGRYFEZ 14
-#define FEZBOMB 15
+#define BULLET 2
+#define BULLWAVE 3
+#define ORB 4
+#define ENEMYSHIPPY 5
+#define ENEMYHEART 6
+#define ENEMYBULLET 7
+#define ENEMYBHEART 8
+#define EXPLOSION 9
+#define POWERUP 10
+#define STAR 11
+#define PARTICLE 12
+#define LEVELMESSAGE 13
+#define MESSAGE 14
+#define ANGRYFEZ 15
+#define FEZBOMB 16
 #define SPLASH -1
 #define TITLE 1
 #define DEMO 2
@@ -107,7 +106,7 @@ FILE *highscore_fp;
 
 int start_windowed = 0;
 int use_arcade_mode = 0;
-int screen_width = 640;
+int screen_width = 720;
 int screen_height = 480;
 
 int compare(const void *a, const void *b)
@@ -311,6 +310,14 @@ void NewGame(int mlevel)
 	powerupframe = 0;
 	switch (mlevel)
 	{
+	case -2:
+		score = 0;
+		for (increment = 0; increment < MAXSHIPPY; ++increment)
+		{
+			ShippyObjects[increment].used = 0;
+		}
+		shipwait = 600;
+		break;
 	case -1:
 		score = 0;
 		for (increment = 0; increment < MAXSHIPPY; ++increment)
@@ -321,7 +328,7 @@ void NewGame(int mlevel)
 		{
 			AddObject(STAR, rand() % 232 + 8, rand() % 152 + 8, rand() % 200 + 40, rand() % 4 + 2, 100, NULL, 0, 0);
 		}
-		shipwait = 900;
+		shipwait = 600;
 		break;
 	case 1:
 		score = 0;
@@ -1201,7 +1208,7 @@ void InitShippy()
 	waitforkey = 180;
 	done = 0;
 	level = 0;
-	shipwait = 0;
+	shipwait = 360;
 	gameover = 0;
 	operational = 150;
 
@@ -1261,7 +1268,15 @@ void ExecShippy()
 			PrintMessage("PRESS CTRL OR BUTTON 1", 32, 98, TEXT_WHITE);
 
 		}
+		if (shipwait > 0)
+			--shipwait;
 		if (jaction || jsecond)
+		{
+			audio_music(DATADIR "shippy.xm");
+			gamestate = GAME;
+			operational = 0;
+		}
+		else if (shipwait == 0)
 		{
 			gamestate = TITLE;
 			done = 0;
@@ -1533,13 +1548,14 @@ void ExecShippy()
 		}
 		if (operational <= 0)
 		{
-			gamestate = TITLE;
+			gamestate = SPLASH;
 			powerupframe = 0;
-			shipwait = 0;
 			leftmonsters = 0;
 			level = 0;
 			gameover = 0;
-			operational = 0;
+			operational = 29;
+			NewGame(-2);
+			audio_music(NULL);
 		}
 		break;
 	}
