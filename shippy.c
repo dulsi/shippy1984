@@ -20,6 +20,7 @@ Music is copyright neoblaze 2004.
 #define TEXT_CYAN 3
 
 #define SHIPPY 0
+#define SHIPPY2 1
 #define BULLET 2
 #define BULLWAVE 3
 #define ORB 4
@@ -194,7 +195,7 @@ void DrawOverlay()
 		}
 		for (increment = 0; increment < ShippyObjects[1].lives; ++increment)
 		{
-			SYSTEM_BLIT(0, 64, 224 - (increment * 16), 144, 16, 16);
+			SYSTEM_BLIT(16, 64, 224 - (increment * 16), 144, 16, 16);
 		}
 
 		sprintf(buf, "%i", score[0]);
@@ -305,7 +306,7 @@ int AddObject(int type, int x, int y, int level, int special, int health, char *
 			ShippyObjects[increment].dx = dx;
 			ShippyObjects[increment].msg = msg;
 			ShippyObjects[increment].health = health;
-			if ((type == SHIPPY) && (ShippyObjects[increment].special == SHIPPY_SPECIAL_GAMEOVER))
+			if (((type == SHIPPY) || (type == SHIPPY2)) && (ShippyObjects[increment].special == SHIPPY_SPECIAL_GAMEOVER))
 				ShippyObjects[increment].lives = -1;
 			else
 				ShippyObjects[increment].lives = 2;
@@ -358,9 +359,9 @@ void NewGame(int mlevel)
 		}
 		AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
 		if (numplayers == 2)
-			AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+			AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
 		else
-			AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
+			AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
 		AddObject(LEVELMESSAGE, 0, 0, mlevel, 180, 0, NULL, 0, 0);
 		for (increment = 0; increment < 20; ++increment)
 		{
@@ -516,6 +517,12 @@ void RenderShippy(int objnumber)
 			SYSTEM_BLIT(0, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 		}
 		break;
+	case SHIPPY2:
+		if (ShippyObjects[objnumber].health > 0)
+		{
+			SYSTEM_BLIT(16, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+		}
+		break;
 	case ENEMYSHIPPY:
 		SYSTEM_BLIT(32, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 
@@ -650,6 +657,7 @@ void DoAi(int number)
 		break;
 
 	case SHIPPY:
+	case SHIPPY2:
 
 		if (ShippyObjects[number].health == 0)
 		{
@@ -1143,13 +1151,16 @@ void DoAi(int number)
 		ShippyObjects[number].y += 1;
 		if (ShippyObjects[number].y > 144)
 			ShippyObjects[number].y = 144;
-		if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 4, ShippyObjects[0].x, ShippyObjects[0].y, 8) && ShippyObjects[0].health > 0)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			++ShippyObjects[0].level;
-			ShippyObjects[number].used = 0;
-			powerup = ShippyObjects[number].dx;
-			powerupframe = 360;
-			return;
+			if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 4, ShippyObjects[i].x, ShippyObjects[i].y, 8) && ShippyObjects[i].health > 0)
+			{
+				++ShippyObjects[i].level;
+				ShippyObjects[number].used = 0;
+				powerup = ShippyObjects[number].dx;
+				powerupframe = 360;
+				return;
+			}
 		}
 
 		break;
