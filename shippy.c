@@ -229,36 +229,30 @@ void DrawOverlay()
 		if (ShippyObjects[0].special == SHIPPY_SPECIAL_INITIAL)
 		{
 			PrintMessage("ENTER INITIALS!", 0, 146, TEXT_WHITE);
-			if (operational == 2)
+			for (int i = 0; i < 3; i++)
 			{
-				PrintChar(curname[0][0], 0, 152, TEXT_WHITE);
+				if (curname[0][i] == ' ')
+				{
+					PrintChar(currchar[0], 0 + (i * 8), 152, TEXT_YELLOW);
+					SYSTEM_BLIT(0, 96, 0 + (i * 8), 152, 8, 8);
+					break;
+				}
+				PrintChar(curname[0][i], 0 + (i * 8), 152, TEXT_WHITE);
 			}
-			else if (operational == 3)
-			{
-				PrintChar(curname[0][0], 0, 152, TEXT_WHITE);
-				PrintChar(curname[0][1], 8, 152, TEXT_WHITE);
-			}
-
-			PrintChar(currchar[0], 0 + ((operational - 1) * 8), 152, TEXT_YELLOW);
-			SYSTEM_BLIT(0, 96, 0 + ((operational - 1) * 8), 152, 8, 8);
-			break;
 		}
 		if (ShippyObjects[1].special == SHIPPY_SPECIAL_INITIAL)
 		{
 			PrintMessage("ENTER INITIALS!", 240 - 8 * 15, 146, TEXT_WHITE);
-			if (operational == 2)
+			for (int i = 0; i < 3; i++)
 			{
-				PrintChar(curname[1][0], 208, 152, TEXT_WHITE);
+				if (curname[1][i] == ' ')
+				{
+					PrintChar(currchar[1], 208 + (i * 8), 152, TEXT_YELLOW);
+					SYSTEM_BLIT(0, 96, 208 + (i * 8), 152, 8, 8);
+					break;
+				}
+				PrintChar(curname[1][i], 208 + (i * 8), 152, TEXT_WHITE);
 			}
-			else if (operational == 3)
-			{
-				PrintChar(curname[1][0], 208, 152, TEXT_WHITE);
-				PrintChar(curname[1][1], 216, 152, TEXT_WHITE);
-			}
-
-			PrintChar(currchar[1], 208 + ((operational - 1) * 8), 152, TEXT_YELLOW);
-			SYSTEM_BLIT(0, 96, 208 + ((operational - 1) * 8), 152, 8, 8);
-			break;
 		}
 		break;
 	case TITLE:
@@ -283,6 +277,8 @@ void DrawOverlay()
 		{
 			if (winners[increment].last == 1)
 				SYSTEM_BLIT(0, 64, 32, 36 + (8 * increment), 16, 16);
+			if (winners[increment].last == 2)
+				SYSTEM_BLIT(16, 64, 32, 36 + (8 * increment), 16, 16);
 			sprintf(buf, "%i", winners[increment].score);
 			test = strlen(buf);
 			PrintMessage(buf, 192 - (test * 8), 40 + (8 * increment), TEXT_WHITE);
@@ -744,24 +740,36 @@ void DoAi(int number)
 						waitforkey[number] = 15;
 					}
 
+					int initialdone = 0;
 					if (jaction[number])
 					{
-						curname[number][operational - 1] = currchar[number];
-						++operational;
-						currchar[number] = 'A';
-						waitforkey[number] = 20;
+						for (int i = 0; i < 3; i++)
+						{
+							if (curname[number][i] == ' ')
+							{
+								curname[number][i] = currchar[number];
+								currchar[number] = 'A';
+								waitforkey[number] = 20;
+								if (i == 2)
+									initialdone = 1;
+								break;
+							}
+						}
 					}
 
 					if (jsecond[number])
 					{
-						curname[number][operational - 1] = ' ';
-						--operational;
-						if (operational < 1)
-							operational = 1;
+						for (int i = 1; i < 3; i++)
+						{
+							if (curname[number][i] == ' ')
+							{
+								curname[number][i - 1] = ' ';
+							}
+						}
 						currchar[number] = 'A';
 						waitforkey[number] = 20;
 					}
-					if (operational == 4)
+					if (initialdone)
 					{
 						curname[number][3] = 0;
 						strcpy(winners[14].name, curname[number]);
@@ -1345,11 +1353,11 @@ void RestoreHS()
 
 	strcpy(winners[12].name, "EJP");
 	winners[12].level = 4;
-	winners[12].score = 500;
+	winners[12].score = 50000;
 
 	strcpy(winners[13].name, "SCB");
 	winners[13].level = 1;
-	winners[13].score = 400;
+	winners[13].score = 40000;
 	for (i = 0; i < 14; ++i)
 		winners[i].last = 0;
 
@@ -1472,17 +1480,20 @@ void ExecShippy()
 			if (gameover == 0)
 			{
 				int over = 2;
+				int initials = 1;
 				for (int i = 0; i < MAXPLAYERS; i++)
 				{
 					if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
 					{
-						if ((over > 0) && (ShippyObjects[i].health < 0))
+						if ((over > 0) && ((ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL) || (ShippyObjects[i].health < 0)))
 							over = 1;
 						else
 							over = 0;
+						if (ShippyObjects[i].special != SHIPPY_SPECIAL_INITIAL)
+							initials = 0;
 					}
 				}
-				if (over == 1)
+				if ((over == 1) && (initials == 0))
 				{
 					diedlast = 1;
 					for (int i = 0; i < MAXPLAYERS; i++)
@@ -1654,17 +1665,20 @@ void ExecShippy()
 			if (gameover == 0)
 			{
 				int over = 2;
+				int initials = 1;
 				for (int i = 0; i < MAXPLAYERS; i++)
 				{
 					if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
 					{
-						if ((over > 0) && (ShippyObjects[i].health < 0))
+						if ((over > 0) && ((ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL) || (ShippyObjects[i].health < 0)))
 							over = 1;
 						else
 							over = 0;
+						if (ShippyObjects[i].special != SHIPPY_SPECIAL_INITIAL)
+							initials = 0;
 					}
 				}
-				if (over == 1)
+				if ((over == 1) && (initials == 0))
 				{
 					diedlast = 1;
 					for (int i = 0; i < MAXPLAYERS; i++)
