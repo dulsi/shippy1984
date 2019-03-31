@@ -92,6 +92,7 @@ int powerupframe = 0;
 int extralife[MAXPLAYERS] = { 50000, 50000 };
 int shipwait = 0;
 int leftmonsters = 0;
+int numplayers = 1;
 int level = 0;
 int gameover = 0;
 int shots = 0;
@@ -184,12 +185,16 @@ void DrawOverlay()
 		if (timeattack >= 0 && timelimit - timeattack >= 0)
 		{
 			sprintf(buf, "%i", timelimit - timeattack);
-			PrintMessage(buf, 200, 144, TEXT_WHITE);
+			PrintMessage(buf, 104, 144, TEXT_WHITE);
 		}
 
 		for (increment = 0; increment < ShippyObjects[0].lives; ++increment)
 		{
 			SYSTEM_BLIT(0, 64, increment * 16, 144, 16, 16);
+		}
+		for (increment = 0; increment < ShippyObjects[1].lives; ++increment)
+		{
+			SYSTEM_BLIT(0, 64, 224 - (increment * 16), 144, 16, 16);
 		}
 
 		sprintf(buf, "%i", score[0]);
@@ -198,6 +203,9 @@ void DrawOverlay()
 		PrintMessage("HIGH SCORE", 80, 0, TEXT_RED);
 		sprintf(buf, "%i", highscore);
 		PrintMessage(buf, ((30 - strlen(buf)) / 2) * 8, 8, TEXT_WHITE);
+		sprintf(buf, "%i", score[1]);
+		PrintMessage("2UP", 215, 0, TEXT_RED);
+		PrintMessage(buf, 240 - (strlen(buf) * 8), 8, TEXT_WHITE);
 
 		if (powerupframe > 0)
 		{
@@ -349,7 +357,10 @@ void NewGame(int mlevel)
 			ShippyObjects[increment].used = 0;
 		}
 		AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
-		AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
+		if (numplayers == 2)
+			AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+		else
+			AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
 		AddObject(LEVELMESSAGE, 0, 0, mlevel, 180, 0, NULL, 0, 0);
 		for (increment = 0; increment < 20; ++increment)
 		{
@@ -692,14 +703,14 @@ void DoAi(int number)
 						return;
 					}
 
-					if (jdirx <= -1)
+					if (jdirx[number] <= -1)
 					{
 						--currchar;
 						if (currchar < 'A')
 							currchar = 'Z';
 						waitforkey = 15;
 					}
-					if (jdirx >= 1)
+					if (jdirx[number] >= 1)
 					{
 						++currchar;
 						if (currchar > 'Z')
@@ -707,7 +718,7 @@ void DoAi(int number)
 						waitforkey = 15;
 					}
 
-					if (jaction)
+					if (jaction[number])
 					{
 						curname[number][operational - 1] = currchar;
 						++operational;
@@ -715,7 +726,7 @@ void DoAi(int number)
 						waitforkey = 20;
 					}
 
-					if (jsecond)
+					if (jsecond[number])
 					{
 						curname[number][operational - 1] = ' ';
 						--operational;
@@ -742,7 +753,7 @@ void DoAi(int number)
 		}
 
 		if (gamestate == GAME)
-			runsim = jaction;
+			runsim = jaction[number];
 		else
 		{
 			if (rand() % 60 > 30)
@@ -817,8 +828,8 @@ void DoAi(int number)
 		if (gamestate == GAME)
 		{
 
-			ShippyObjects[number].x += jdirx;
-			ShippyObjects[number].y += jdiry;
+			ShippyObjects[number].x += jdirx[number];
+			ShippyObjects[number].y += jdiry[number];
 		}
 		else
 		{
@@ -845,11 +856,11 @@ void DoAi(int number)
 			ShippyObjects[number].y = 144;
 
 #ifdef GODMODE
-		if (jsecond)
+		if (jsecond[0])
 			leftmonsters = 0;
 #else
 
-		if (jsecond && BELATED >= 0)
+		if (jsecond[0] && BELATED >= 0)
 		{
 			BELATED = 1 - BELATED;
 			if (BELATED == 1)
@@ -958,25 +969,30 @@ void DoAi(int number)
 			}
 
 		}
-		if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 8, ShippyObjects[0].x, ShippyObjects[0].y, 8))
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-#ifndef GODMODE
-			if (ShippyObjects[0].health > 0 && shipwait == 0)
+			if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || ((ShippyObjects[i].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL))
+				continue;
+			if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 8, ShippyObjects[i].x, ShippyObjects[i].y, 8))
 			{
-				ShippyObjects[0].health = 0;
-				for (runsim = 0; runsim < MAXSHIPPY; ++runsim)
+#ifndef GODMODE
+				if (ShippyObjects[i].health > 0 && shipwait == 0)
 				{
-					AddObject(PARTICLE,
-										ShippyObjects[number].x * 64,
-										ShippyObjects[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
-				}
-				diedlast = 1;
+					ShippyObjects[i].health = 0;
+					for (runsim = 0; runsim < MAXSHIPPY; ++runsim)
+					{
+						AddObject(PARTICLE,
+											ShippyObjects[number].x * 64,
+											ShippyObjects[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
+					}
+					diedlast = 1;
 
-				audio_play(DATADIR "die.wav");
-				ShippyObjects[number].type = EXPLOSION;
-				ShippyObjects[number].special = 4;
-			}
+					audio_play(DATADIR "die.wav");
+					ShippyObjects[number].type = EXPLOSION;
+					ShippyObjects[number].special = 4;
+				}
 #endif
+			}
 
 		}
 
@@ -1161,29 +1177,34 @@ void DoAi(int number)
 
 		if (gameover == 0)
 		{
-			if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 2, ShippyObjects[0].x, ShippyObjects[0].y, 8))
+			for (int i = 0; i < MAXPLAYERS; i++)
 			{
-#ifndef GODMODE
-				if (ShippyObjects[0].health > 0)
+				if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || ((ShippyObjects[i].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL))
+					continue;
+				if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 2, ShippyObjects[i].x, ShippyObjects[i].y, 8))
 				{
-					ShippyObjects[0].health = 0;
-					for (runsim = 0; runsim < MAXSHIPPY; ++runsim)
+	#ifndef GODMODE
+					if (ShippyObjects[i].health > 0)
 					{
-						AddObject(PARTICLE,
-											ShippyObjects
-											[number].x *
-											64,
-											ShippyObjects
-											[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
-					}
+						ShippyObjects[i].health = 0;
+						for (runsim = 0; runsim < MAXSHIPPY; ++runsim)
+						{
+							AddObject(PARTICLE,
+												ShippyObjects
+												[number].x *
+												64,
+												ShippyObjects
+												[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
+						}
 
-					diedlast = 1;
-					audio_play(DATADIR "die.wav");
-					ShippyObjects[number].type = EXPLOSION;
-					ShippyObjects[number].special = 4;
-					return;
+						diedlast = 1;
+						audio_play(DATADIR "die.wav");
+						ShippyObjects[number].type = EXPLOSION;
+						ShippyObjects[number].special = 4;
+						return;
+					}
+	#endif
 				}
-#endif
 			}
 		}
 		if (ShippyObjects[number].x > 0 && ShippyObjects[number].x < 239)
@@ -1371,11 +1392,15 @@ void ExecShippy()
 		}
 		if (shipwait > 0)
 			--shipwait;
-		if (jaction || jsecond)
+		if (jaction[0] || jsecond[0] || players[0] || players[1])
 		{
 			audio_music(DATADIR "shippy.xm");
 			gamestate = GAME;
 			operational = 0;
+			if (players[1])
+				numplayers = 2;
+			else
+				numplayers = 1;
 		}
 		else if (shipwait == 0)
 		{
@@ -1466,7 +1491,7 @@ void ExecShippy()
 			PrintMessage("GAME OVER!", 88, 112, TEXT_RED);
 			if (shipwait > 0)
 				shipwait--;
-			if ((jaction) || (shipwait == 0))
+			if ((jaction[0]) || (shipwait == 0))
 			{
 				waitforkey = 360;
 				gamestate = SCORES;
@@ -1500,7 +1525,7 @@ void ExecShippy()
 			if (shipwait > 0)
 				--shipwait;
 
-			if (jaction)
+			if (jaction[0] || players[0] || players[1])
 			{
 				if (gamestate == SCORES)
 				{
@@ -1516,10 +1541,13 @@ void ExecShippy()
 				}
 				else
 				{
-
 					audio_music(DATADIR "shippy.xm");
 					gamestate = GAME;
 					operational = 0;
+					if (players[1])
+						numplayers = 2;
+					else
+						numplayers = 1;
 				}
 			}
 			if (shipwait == 0)
@@ -1580,7 +1608,7 @@ void ExecShippy()
 					highscore = score[i];
 			}
 			--operational;
-			if (jaction)
+			if (jaction[0] || players[0] || players[1])
 			{
 				operational = 0;
 				waitforkey = 30;

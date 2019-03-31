@@ -2,11 +2,12 @@
 #include <allegro.h>
 #include <aldumb.h>
 #include "shippy.h"
-int jdirx = 0;
-int jdiry = 0;
-int jaction = 0;
-int jsecond = 0;
+int jdirx[2] = { 0, 0 };
+int jdiry[2] = { 0, 0 };
+int jaction[2] = { 0, 0 };
+int jsecond[2] = { 0, 0 };
 int waitforkey = 360;
+int players[2] = { 0, 0 };
 
 volatile int objectsynch = 0;
 
@@ -317,10 +318,13 @@ void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 
 void SYSTEM_POLLINPUT()
 {
-	jaction = 0;
-	jsecond = 0;
-	jdirx = 0;
-	jdiry = 0;
+	for (int i = 0; i < 2; i++)
+	{
+		jaction[i] = 0;
+		jsecond[i] = 0;
+		jdirx[i] = 0;
+		jdiry[i] = 0;
+	}
 
 	if (SYSTEM_GETKEY(KEY_ESC))
 		done = 1;
@@ -351,19 +355,19 @@ void SYSTEM_POLLINPUT()
 	if (num_joysticks > 0)
 	{
 		poll_joystick();
-		jaction = joy[0].button[0].b;
-		jsecond = joy[0].button[1].b;
-		jdirx = joy[0].stick[0].axis[0].pos / 50;
-		jdiry = joy[0].stick[0].axis[1].pos / 65;
+		jaction[0] = joy[0].button[0].b;
+		jsecond[0] = joy[0].button[1].b;
+		jdirx[0] = joy[0].stick[0].axis[0].pos / 50;
+		jdiry[0] = joy[0].stick[0].axis[1].pos / 65;
 	}
-	if (jdirx == 0)
-		jdirx = (SYSTEM_GETKEY(KEY_LEFT) - SYSTEM_GETKEY(KEY_RIGHT)) * 2;
-	if (jdiry == 0)
-		jdiry = SYSTEM_GETKEY(KEY_UP) - SYSTEM_GETKEY(KEY_DOWN);
-	if (jaction == 0)
-		jaction = SYSTEM_GETKEY(KEY_LCONTROL);
-	if (jsecond == 0)
-		jsecond = SYSTEM_GETKEY(KEY_BACKSPACE);
+	if (jdirx[0] == 0)
+		jdirx[0] = (SYSTEM_GETKEY(KEY_LEFT) - SYSTEM_GETKEY(KEY_RIGHT)) * 2;
+	if (jdiry[0] == 0)
+		jdiry[0] = SYSTEM_GETKEY(KEY_UP) - SYSTEM_GETKEY(KEY_DOWN);
+	if (jaction[0] == 0)
+		jaction[0] = SYSTEM_GETKEY(KEY_LCONTROL);
+	if (jsecond[0] == 0)
+		jsecond[0] = SYSTEM_GETKEY(KEY_BACKSPACE);
 }
 
 void SYSTEM_IDLE()

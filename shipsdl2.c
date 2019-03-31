@@ -13,6 +13,14 @@
 #define SHIPPY_ESCAPE 6
 #define SHIPPY_RETURN 7
 #define SHIPPY_LALT 8
+#define SHIPPY_D 9
+#define SHIPPY_G 10
+#define SHIPPY_F 11
+#define SHIPPY_R 12
+#define SHIPPY_Q 13
+#define SHIPPY_S 14
+#define SHIPPY_1 15
+#define SHIPPY_2 16
 
 SDL_Window *screen = NULL;
 SDL_Renderer *renderer = NULL;
@@ -24,11 +32,12 @@ Uint8 key[1337];
 SDL_Rect src;
 SDL_Rect dest;
 
-int jdirx = 0;
-int jdiry = 0;
-int jaction = 0;
-int jsecond = 0;
+int jdirx[2] = { 0, 0 };
+int jdiry[2] = { 0, 0 };
+int jaction[2] = { 0, 0 };
+int jsecond[2] = { 0, 0 };
 int waitforkey = 360;
+int players[2] = { 0, 0 };
 
 volatile int objectsynch = 0;
 Uint32 timing;
@@ -312,10 +321,13 @@ void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 
 void SYSTEM_POLLINPUT()
 {
-	jaction = 0;
-	jsecond = 0;
-	jdirx = 0;
-	jdiry = 0;
+	for (int i = 0; i < 2; i++)
+	{
+		jaction[i] = 0;
+		jsecond[i] = 0;
+		jdirx[i] = 0;
+		jdiry[i] = 0;
+	}
 
 	if (key[SHIPPY_ESCAPE])
 		done = 1;
@@ -328,29 +340,35 @@ void SYSTEM_POLLINPUT()
 		return;
 	}
 
-	jdirx = 0;
-	jdiry = 0;
-	jaction = 0;
-	jsecond = 0;
-
 	if (Joystick)
 	{
 		SDL_JoystickUpdate();
-		jaction = SDL_JoystickGetButton(Joystick, 0);
-		jsecond = SDL_JoystickGetButton(Joystick, 1);
-		jdirx = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
-		jdiry = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
+		jaction[0] = SDL_JoystickGetButton(Joystick, 0);
+		jsecond[0] = SDL_JoystickGetButton(Joystick, 1);
+		jdirx[0] = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
+		jdiry[0] = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
 	}
 
-	if (jdirx == 0)
-		jdirx = (key[SHIPPY_RIGHT] - key[SHIPPY_LEFT]) * 2;
-	if (jdiry == 0)
-		jdiry = key[SHIPPY_DOWN] - key[SHIPPY_UP];
-	if (jaction == 0)
-		jaction = key[SHIPPY_LCTRL];
-	if (jsecond == 0)
-		jsecond = key[SHIPPY_BACKSPACE];
+	if (jdirx[0] == 0)
+		jdirx[0] = (key[SHIPPY_RIGHT] - key[SHIPPY_LEFT]) * 2;
+	if (jdiry[0] == 0)
+		jdiry[0] = key[SHIPPY_DOWN] - key[SHIPPY_UP];
+	if (jaction[0] == 0)
+		jaction[0] = key[SHIPPY_LCTRL];
+	if (jsecond[0] == 0)
+		jsecond[0] = key[SHIPPY_BACKSPACE];
 
+	if (jdirx[1] == 0)
+		jdirx[1] = (key[SHIPPY_G] - key[SHIPPY_D]) * 2;
+	if (jdiry[1] == 0)
+		jdiry[1] = key[SHIPPY_F] - key[SHIPPY_R];
+	if (jaction[1] == 0)
+		jaction[1] = key[SHIPPY_Q];
+	if (jsecond[1] == 0)
+		jsecond[1] = key[SHIPPY_S];
+
+	players[1] = key[SHIPPY_2];
+	players[0] = key[SHIPPY_1];
 }
 
 void SYSTEM_IDLE()
@@ -408,6 +426,30 @@ void SYSTEM_IDLE()
 				break;
 			case SDLK_LALT:
 				keyIndx = SHIPPY_LALT;
+				break;
+			case SDLK_d:
+				keyIndx = SHIPPY_D;
+				break;
+			case SDLK_g:
+				keyIndx = SHIPPY_G;
+				break;
+			case SDLK_f:
+				keyIndx = SHIPPY_F;
+				break;
+			case SDLK_r:
+				keyIndx = SHIPPY_R;
+				break;
+			case SDLK_q:
+				keyIndx = SHIPPY_Q;
+				break;
+			case SDLK_s:
+				keyIndx = SHIPPY_S;
+				break;
+			case SDLK_1:
+				keyIndx = SHIPPY_1;
+				break;
+			case SDLK_2:
+				keyIndx = SHIPPY_2;
 				break;
 			default:
 				break;

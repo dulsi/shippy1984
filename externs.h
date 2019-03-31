@@ -2,10 +2,10 @@
 #define __EXTERNS_H__
 
 extern int waitforkey;
-extern int jdirx;
-extern int jdiry;
-extern int jaction;
-extern int jsecond;
+extern int jdirx[2];
+extern int jdiry[2];
+extern int jaction[2];
+extern int jsecond[2];
 extern int waitforkey;
 extern int done;
 extern int gscale;
@@ -14,5 +14,6 @@ extern int start_windowed;
 extern int use_arcade_mode;
 extern int screen_width;
 extern int screen_height;
+extern int players[2];
 
 #endif

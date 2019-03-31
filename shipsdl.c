@@ -14,11 +14,12 @@ Uint32 CLEARCOLOR = 0;
 SDL_Rect src;
 SDL_Rect dest;
 
-int jdirx = 0;
-int jdiry = 0;
-int jaction = 0;
-int jsecond = 0;
+int jdirx[2] = { 0, 0 };
+int jdiry[2] = { 0, 0 };
+int jaction[2] = { 0, 0 };
+int jsecond[2] = { 0, 0 };
 int waitforkey = 360;
+int players[2] = { 0, 0 };
 
 volatile int objectsynch = 0;
 Uint32 timing;
@@ -324,10 +325,14 @@ void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 
 void SYSTEM_POLLINPUT()
 {
-	jaction = 0;
-	jsecond = 0;
-	jdirx = 0;
-	jdiry = 0;
+	for (int i = 0; i < 2; i++)
+	{
+		jaction[i] = 0;
+		jsecond[i] = 0;
+		jdirx[i] = 0;
+		jdiry[i] = 0;
+  players[i] = 0;
+	}
 
 	if (key[SDLK_ESCAPE])
 		done = 1;
@@ -340,29 +345,35 @@ void SYSTEM_POLLINPUT()
 		return;
 	}
 
-	jdirx = 0;
-	jdiry = 0;
-	jaction = 0;
-	jsecond = 0;
-
 	if (Joystick)
 	{
 		SDL_JoystickUpdate();
-		jaction = SDL_JoystickGetButton(Joystick, 0);
-		jsecond = SDL_JoystickGetButton(Joystick, 1);
-		jdirx = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
-		jdiry = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
+		jaction[0] = SDL_JoystickGetButton(Joystick, 0);
+		jsecond[0] = SDL_JoystickGetButton(Joystick, 1);
+		jdirx[0] = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
+		jdiry[0] = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
 	}
 
-	if (jdirx == 0)
-		jdirx = (key[SDLK_RIGHT] - key[SDLK_LEFT]) * 2;
-	if (jdiry == 0)
-		jdiry = key[SDLK_DOWN] - key[SDLK_UP];
-	if (jaction == 0)
-		jaction = key[SDLK_LCTRL];
-	if (jsecond == 0)
-		jsecond = key[SDLK_BACKSPACE];
+	if (jdirx[0] == 0)
+		jdirx[0] = (key[SDLK_RIGHT] - key[SDLK_LEFT]) * 2;
+	if (jdiry[0] == 0)
+		jdiry[0] = key[SDLK_DOWN] - key[SDLK_UP];
+	if (jaction[0] == 0)
+		jaction[0] = key[SDLK_LCTRL];
+	if (jsecond[0] == 0)
+		jsecond[0] = key[SDLK_BACKSPACE];
 
+	if (jdirx[1] == 0)
+		jdirx[1] = (key[SDLK_g] - key[SDLK_d]) * 2;
+	if (jdiry[1] == 0)
+		jdiry[1] = key[SDLK_f] - key[SDLK_r];
+	if (jaction[1] == 0)
+		jaction[1] = key[SDLK_q];
+	if (jsecond[1] == 0)
+		jsecond[1] = key[SDLK_s];
+
+ players[1] = key[SDLK_2];
+ players[0] = key[SDLK_1];
 }
 
 void SYSTEM_IDLE()
