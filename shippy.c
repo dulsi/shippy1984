@@ -96,7 +96,7 @@ int leftmonsters = 0;
 int numplayers = 1;
 int level = 0;
 int gameover = 0;
-int shots = 0;
+int shots[MAXPLAYERS] = { 0, 0 };
 int score[MAXPLAYERS] = { 0, 0 };
 int highscore;
 char acc[32];
@@ -337,7 +337,8 @@ void NewGame(int mlevel)
 	int adder;
 	int bonus;
 
-	shots = 0;
+	for (increment = 0; increment < MAXPLAYERS; ++increment)
+		shots[increment] = 0;
 	powerupframe = 0;
 	switch (mlevel)
 	{
@@ -813,11 +814,11 @@ void DoAi(int number)
 				case POWER_RAPID:
 					if (ShippyObjects[number].special == SHIPPY_SPECIAL_NONE)
 					{
-						if (shots < 10)
+						if (shots[number] < 10)
 						{
 							AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, number, 0, 0, NULL, 0, 0);
 							audio_play(DATADIR "shot.wav");
-							++shots;
+							++shots[number];
 							++firedshots;
 						}
 						ShippyObjects[number].special = SHIPPY_SPECIAL_FIRED;
@@ -828,12 +829,12 @@ void DoAi(int number)
 				case POWER_HELIX:
 					if (ShippyObjects[number].special == SHIPPY_SPECIAL_NONE)
 					{
-						if (shots < 6)
+						if (shots[number] < 6)
 						{
 							audio_play(DATADIR "helix.wav");
 							AddObject(BULLWAVE, ShippyObjects[number].x - 6, ShippyObjects[number].y - 8, number, -16, 0, NULL, 0, 0);
 							AddObject(BULLWAVE, ShippyObjects[number].x + 6, ShippyObjects[number].y - 8, number, 16, 0, NULL, 0, 0);
-							shots += 2;
+							shots[number] += 2;
 							firedshots += 2;
 
 						}
@@ -849,11 +850,11 @@ void DoAi(int number)
 			{
 				if (ShippyObjects[number].special == SHIPPY_SPECIAL_NONE)
 				{
-					if (shots < 3)
+					if (shots[number] < 3)
 					{
 						AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, number, 0, 0, NULL, 0, 0);
 						audio_play(DATADIR "shot.wav");
-						++shots;
+						++shots[number];
 						++firedshots;
 					}
 					ShippyObjects[number].special = SHIPPY_SPECIAL_FIRED;
@@ -1092,7 +1093,7 @@ void DoAi(int number)
 		if (ShippyObjects[number].y < 0 || ShippyObjects[number].x < 0 || ShippyObjects[number].x > 239 || ShippyObjects[number].y > 159)
 		{
 			ShippyObjects[number].used = 0;
-			--shots;
+			--shots[ShippyObjects[number].level];
 			++missedshots;
 			return;
 		}
@@ -1118,7 +1119,7 @@ void DoAi(int number)
 						{
 						case ANGRYFEZ:
 							score[ShippyObjects[number].level] += 2000 + ShippyObjects[increment].y;
-							--shots;
+							--shots[ShippyObjects[number].level];
 							for (runsim = 0; runsim < 3; ++runsim)
 							{
 								AddObject(EXPLOSION, ShippyObjects[increment].x + ((rand() % 3) - 1) * 4, ShippyObjects[increment].y + ((rand() % 3) - 1) * 4, 0, rand() % 48, 0, NULL, 0, 0);
@@ -1129,7 +1130,7 @@ void DoAi(int number)
 
 						case ENEMYSHIPPY:
 							score[ShippyObjects[number].level] += 100 + ShippyObjects[increment].y;
-							--shots;
+							--shots[ShippyObjects[number].level];
 							for (runsim = 0; runsim < 3; ++runsim)
 							{
 								AddObject(EXPLOSION, ShippyObjects[increment].x + ((rand() % 3) - 1) * 4, ShippyObjects[increment].y + ((rand() % 3) - 1) * 4, 0, rand() % 48, 0, NULL, 0, 0);
@@ -1143,7 +1144,7 @@ void DoAi(int number)
 							if (ShippyObjects[increment].type == ENEMYHEART)
 								score[ShippyObjects[number].level] += 500 + ShippyObjects[increment].y;
 						case ENEMYBHEART:
-							--shots;
+							--shots[ShippyObjects[number].level];
 							for (runsim = 0; runsim < 3; ++runsim)
 							{
 								AddObject(EXPLOSION, ShippyObjects[increment].x + ((rand() % 3) - 1) * 4, ShippyObjects[increment].y + ((rand() % 3) - 1) * 4, 0, rand() % 48, 0, NULL, 0, 0);
@@ -1534,7 +1535,8 @@ void ExecShippy()
 
 		if (gameover == 0)
 		{
-			shots = 0;
+			for (int i = 0; i < MAXPLAYERS; i++)
+				shots[i] = 0;
 			++level;
 			NewGame(level);
 		}
@@ -1724,7 +1726,8 @@ void ExecShippy()
 		}
 		if (gameover == 0)
 		{
-			shots = 0;
+			for (int i = 0; i < MAXPLAYERS; i++)
+				shots[i] = 0;
 			++level;
 			NewGame(level);
 		}
