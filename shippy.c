@@ -89,13 +89,13 @@ int BELATED = 0;
 int gamestate = SPLASH;
 int powerup = 0;
 int powerupframe = 0;
-int extralife[MAXPLAYERS] = { 50000 };
+int extralife[MAXPLAYERS] = { 50000, 50000 };
 int shipwait = 0;
 int leftmonsters = 0;
 int level = 0;
 int gameover = 0;
 int shots = 0;
-int score[MAXPLAYERS] = { 0 };
+int score[MAXPLAYERS] = { 0, 0 };
 int highscore;
 char acc[32];
 char eff[32];
@@ -297,7 +297,10 @@ int AddObject(int type, int x, int y, int level, int special, int health, char *
 			ShippyObjects[increment].dx = dx;
 			ShippyObjects[increment].msg = msg;
 			ShippyObjects[increment].health = health;
-			ShippyObjects[increment].lives = 2;
+			if ((type == SHIPPY) && (ShippyObjects[increment].special == SHIPPY_SPECIAL_GAMEOVER))
+				ShippyObjects[increment].lives = -1;
+			else
+				ShippyObjects[increment].lives = 2;
 			return 1;
 		}
 	}
@@ -346,6 +349,7 @@ void NewGame(int mlevel)
 			ShippyObjects[increment].used = 0;
 		}
 		AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+		AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
 		AddObject(LEVELMESSAGE, 0, 0, mlevel, 180, 0, NULL, 0, 0);
 		for (increment = 0; increment < 20; ++increment)
 		{
@@ -370,7 +374,7 @@ void NewGame(int mlevel)
 
 		break;
 	default:
-		for (increment = 1; increment < MAXSHIPPY; ++increment)
+		for (increment = MAXPLAYERS; increment < MAXSHIPPY; ++increment)
 		{
 			ShippyObjects[increment].used = 0;
 		}
@@ -720,16 +724,6 @@ void DoAi(int number)
 						currchar = 'A';
 						waitforkey = 20;
 					}
-				}
-				if (ShippyObjects[number].special == SHIPPY_SPECIAL_GAMEOVER)
-				{
-					AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
-					AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
-					AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
-					waitforkey = 480;
-					shipwait = 600;
-
-					gameover = 1;
 				}
 			}
 			else
@@ -1416,6 +1410,27 @@ void ExecShippy()
 			{
 
 				DoAi(increment);
+			}
+			if (gameover == 0)
+			{
+				int over = 1;
+				for (int i = 0; i < MAXPLAYERS; i++)
+				{
+					if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
+					{
+						over = 0;
+					}
+				}
+				if (over)
+				{
+					AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
+					AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
+					AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
+					waitforkey = 480;
+					shipwait = 600;
+
+					gameover = 1;
+				}
 			}
 			if (shipwait > 0)
 				--shipwait;
