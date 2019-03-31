@@ -48,6 +48,8 @@ Music is copyright neoblaze 2004.
 #define SHIPPY_SPECIAL_INITIAL 2
 #define SHIPPY_SPECIAL_GAMEOVER 4
 
+#define MAXPLAYERS 2
+
 struct SHIPPYINFO
 {
 	int x;
@@ -87,13 +89,13 @@ int BELATED = 0;
 int gamestate = SPLASH;
 int powerup = 0;
 int powerupframe = 0;
-int extralife = 50000;
+int extralife[MAXPLAYERS] = { 50000 };
 int shipwait = 0;
 int leftmonsters = 0;
 int level = 0;
 int gameover = 0;
 int shots = 0;
-int score = 0;
+int score[MAXPLAYERS] = { 0 };
 int highscore;
 char acc[32];
 char eff[32];
@@ -101,7 +103,7 @@ char bon[64];
 char tim[64];
 int aiwavelet[240];
 
-char curname[1][4];
+char curname[MAXPLAYERS][4];
 char currchar = 'A';
 int operational = 0;
 int missedshots = 0;
@@ -190,7 +192,7 @@ void DrawOverlay()
 			SYSTEM_BLIT(0, 64, increment * 16, 144, 16, 16);
 		}
 
-		sprintf(buf, "%i", score);
+		sprintf(buf, "%i", score[0]);
 		PrintMessage("1UP", 0, 0, TEXT_RED);
 		PrintMessage(buf, 0, 8, TEXT_WHITE);
 		PrintMessage("HIGH SCORE", 80, 0, TEXT_RED);
@@ -314,7 +316,8 @@ void NewGame(int mlevel)
 	switch (mlevel)
 	{
 	case -2:
-		score = 0;
+		for (int i = 0; i < MAXPLAYERS; i++)
+			score[i] = 0;
 		for (increment = 0; increment < MAXSHIPPY; ++increment)
 		{
 			ShippyObjects[increment].used = 0;
@@ -322,7 +325,8 @@ void NewGame(int mlevel)
 		shipwait = 600;
 		break;
 	case -1:
-		score = 0;
+		for (int i = 0; i < MAXPLAYERS; i++)
+			score[i] = 0;
 		for (increment = 0; increment < MAXSHIPPY; ++increment)
 		{
 			ShippyObjects[increment].used = 0;
@@ -334,7 +338,8 @@ void NewGame(int mlevel)
 		shipwait = 600;
 		break;
 	case 1:
-		score = 0;
+		for (int i = 0; i < MAXPLAYERS; i++)
+			score[i] = 0;
 		diedlast = 0;
 		for (increment = 0; increment < MAXSHIPPY; ++increment)
 		{
@@ -355,7 +360,8 @@ void NewGame(int mlevel)
 		AddObject(MESSAGE, 0, 88, 300, 300, 0, "PRESS CTRL TO FIRE GUNS!", 0, 0);
 		AddObject(MESSAGE, 0, 80, 300, 300, 0, "READY", 0, 0);
 		AddObject(MESSAGE, 0, 80, 180, 480, 0, "GO!", 0, 0);
-		extralife = 50000;
+		for (int i = 0; i < MAXPLAYERS; i++)
+			extralife[i] = 50000;
 		shipwait = 300;
 		timelimit = (72 * 9) + (72 * mlevel);
 		timeattack = -shipwait;
@@ -460,7 +466,9 @@ void NewGame(int mlevel)
 			sprintf(bon, "TOTAL TIME ATTACK BONUS %i!", bonus);
 		}
 
-		score += bonus;
+		for (int i = 0; i < MAXPLAYERS; i++)
+			if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
+				score[i] += bonus;
 		AddObject(MESSAGE, 0, 32, 180, 180, 0, acc, 0, 0);
 		AddObject(MESSAGE, 0, 40, 180, 180, 0, eff, 0, 0);
 		AddObject(MESSAGE, 0, 48, 180, 180, 0, bon, 0, 0);
@@ -638,7 +646,10 @@ void DoAi(int number)
 			{
 				if (((ShippyObjects[number].special & SHIPPY_SPECIAL_INITIAL) != SHIPPY_SPECIAL_INITIAL) && (ShippyObjects[number].special != SHIPPY_SPECIAL_GAMEOVER))
 				{
-					if (score <= winners[13].score)
+					for (int i = 0; i < MAXSCORE; i++)
+						if (winners[i].last == number + 1)
+							winners[i].last = 0;
+					if (score[number] <= winners[13].score)
 					{
 						ShippyObjects[number].special = SHIPPY_SPECIAL_GAMEOVER;
 					}
@@ -669,9 +680,8 @@ void DoAi(int number)
 						curname[number][3] = 0;
 						strcpy(winners[14].name, curname[number]);
 						winners[14].level = level;
-						winners[14].score = score;
-						winners[14].last = 1;
-						for (int i = 0; i < MAXSCORE; i++)
+						winners[14].score = score[number];
+						winners[14].last = number + 1;
 						qsort(winners, MAXSCORE, sizeof(struct HISCORE), compare);
 						waitforkey = 360;
 						ShippyObjects[number].special = SHIPPY_SPECIAL_GAMEOVER;
@@ -1057,7 +1067,7 @@ void DoAi(int number)
 						switch (ShippyObjects[increment].type)
 						{
 						case ANGRYFEZ:
-							score += 2000 + ShippyObjects[increment].y;
+							score[ShippyObjects[number].level] += 2000 + ShippyObjects[increment].y;
 							--shots;
 							for (runsim = 0; runsim < 3; ++runsim)
 							{
@@ -1068,7 +1078,7 @@ void DoAi(int number)
 							break;
 
 						case ENEMYSHIPPY:
-							score += 100 + ShippyObjects[increment].y;
+							score[ShippyObjects[number].level] += 100 + ShippyObjects[increment].y;
 							--shots;
 							for (runsim = 0; runsim < 3; ++runsim)
 							{
@@ -1081,7 +1091,7 @@ void DoAi(int number)
 							AddObject(ENEMYBHEART, ShippyObjects[number].x, ShippyObjects[number].y - 16, 0, 0, 0, NULL, 0, 0);
 						case ENEMYHEART:
 							if (ShippyObjects[increment].type == ENEMYHEART)
-								score += 500 + ShippyObjects[increment].y;
+								score[ShippyObjects[number].level] += 500 + ShippyObjects[increment].y;
 						case ENEMYBHEART:
 							--shots;
 							for (runsim = 0; runsim < 3; ++runsim)
@@ -1389,12 +1399,15 @@ void ExecShippy()
 
 	case GAME:
 
-		if (score > extralife)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			ShippyObjects[0].lives++;
-			extralife *= 2;
-			audio_play(DATADIR "fanfare.wav");
+			if (score[i] > extralife[i])
+			{
+				ShippyObjects[i].lives++;
+				extralife[i] *= 2;
+				audio_play(DATADIR "fanfare.wav");
 
+			}
 		}
 		if (leftmonsters > 0 && done == 0 && gameover == 0)
 		{
@@ -1408,8 +1421,11 @@ void ExecShippy()
 				--shipwait;
 			if (powerupframe > 0)
 				--powerupframe;
-			if (score > highscore)
-				highscore = score;
+			for (int i = 0; i < MAXPLAYERS; i++)
+			{
+				if (score[i] > highscore)
+					highscore = score[i];
+			}
 			return;
 		}
 
@@ -1427,8 +1443,11 @@ void ExecShippy()
 				DoAi(increment);
 			}
 
-			if (score > highscore)
-				highscore = score;
+			for (int i = 0; i < MAXPLAYERS; i++)
+			{
+				if (score[i] > highscore)
+					highscore = score[i];
+			}
 			PrintMessage("GAME OVER!", 88, 112, TEXT_RED);
 			if (shipwait > 0)
 				shipwait--;
@@ -1518,12 +1537,15 @@ void ExecShippy()
 		}
 		break;
 	case DEMO:
-		if (score > extralife)
+		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			ShippyObjects[0].lives++;
-			extralife *= 2;
-			audio_play(DATADIR "fanfare.wav");
+			if (score[i] > extralife[i])
+			{
+				ShippyObjects[i].lives++;
+				extralife[i] *= 2;
+				audio_play(DATADIR "fanfare.wav");
 
+			}
 		}
 
 		if (leftmonsters > 0 && done == 0 && gameover == 0 && operational > 0)
@@ -1537,8 +1559,11 @@ void ExecShippy()
 				--shipwait;
 			if (powerupframe > 0)
 				--powerupframe;
-			if (score > highscore)
-				highscore = score;
+			for (int i = 0; i < MAXPLAYERS; i++)
+			{
+				if (score[i] > highscore)
+					highscore = score[i];
+			}
 			--operational;
 			if (jaction)
 			{
