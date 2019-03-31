@@ -40,9 +40,13 @@ Music is copyright neoblaze 2004.
 #define DEMO 2
 #define GAME 3
 #define SCORES 4
-#define INITIALS 5
 #define POWER_RAPID 0
 #define POWER_HELIX 1
+
+#define SHIPPY_SPECIAL_NONE 0
+#define SHIPPY_SPECIAL_FIRED 1
+#define SHIPPY_SPECIAL_INITIAL 2
+#define SHIPPY_SPECIAL_GAMEOVER 4
 
 struct SHIPPYINFO
 {
@@ -97,6 +101,7 @@ char bon[64];
 char tim[64];
 int aiwavelet[240];
 
+char curname[1][4];
 char currchar = 'A';
 int operational = 0;
 int missedshots = 0;
@@ -209,6 +214,23 @@ void DrawOverlay()
 				break;
 			}
 		}
+		if ((ShippyObjects[0].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL)
+		{
+			PrintMessage("ENTER INITIALS!", 0, 146, TEXT_WHITE);
+			if (operational == 2)
+			{
+				PrintChar(curname[0][0], 0, 152, TEXT_WHITE);
+			}
+			else if (operational == 3)
+			{
+				PrintChar(curname[0][0], 0, 152, TEXT_WHITE);
+				PrintChar(curname[0][1], 8, 152, TEXT_WHITE);
+			}
+
+			PrintChar(currchar, 0 + ((operational - 1) * 8), 152, TEXT_YELLOW);
+			SYSTEM_BLIT(0, 96, 0 + ((operational - 1) * 8), 152, 8, 8);
+			break;
+		}
 		break;
 	case TITLE:
 		PrintMessage("SHIPPY 1984!", 56, 16, TEXT_YELLOW);
@@ -225,25 +247,6 @@ void DrawOverlay()
 		PrintMessage("  IS GOOD FOR YOU", 40, 136, TEXT_WHITE);
 		SYSTEM_BLIT(24, 88, 40, 136, 8, 8);
 		break;
-	case INITIALS:
-		PrintMessage("ENTER YOUR INITIALS!", 48, 64, TEXT_WHITE);
-		PrintMessage("LEFT AND RIGHT CHANGE LETTER!", 12, 128, TEXT_WHITE);
-		PrintMessage("BUTTON 1 CHOOSES A LETTER!", 24, 136, TEXT_WHITE);
-		PrintMessage("BUTTON 2 DELETES A LETTER!", 24, 144, TEXT_WHITE);
-		if (operational == 2)
-		{
-			PrintChar(winners[14].name[0], 48, 80, TEXT_WHITE);
-		}
-		else if (operational == 3)
-		{
-			PrintChar(winners[14].name[0], 48, 80, TEXT_WHITE);
-			PrintChar(winners[14].name[1], 56, 80, TEXT_WHITE);
-		}
-
-		PrintChar(currchar, 48 + ((operational - 1) * 8), 80, TEXT_YELLOW);
-		SYSTEM_BLIT(0, 96, 48 + ((operational - 1) * 8), 88, 8, 8);
-		break;
-
 	case SCORES:
 		PrintMessage("ALL TIME BEST PLAYERS", 40, 8, TEXT_YELLOW);
 		PrintMessage("NAME  LEVEL  SCORE", 40, 24, TEXT_CYAN);
@@ -337,7 +340,7 @@ void NewGame(int mlevel)
 		{
 			ShippyObjects[increment].used = 0;
 		}
-		AddObject(SHIPPY, 128, 300, 0, 0, 100, NULL, 0, 0);
+		AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
 		AddObject(LEVELMESSAGE, 0, 0, mlevel, 180, 0, NULL, 0, 0);
 		for (increment = 0; increment < 20; ++increment)
 		{
@@ -491,17 +494,14 @@ void RenderShippy(int objnumber)
 		}
 		break;
 	case ENEMYSHIPPY:
-		if (shipwait < 300)
-			SYSTEM_BLIT(32, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+		SYSTEM_BLIT(32, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 
 		break;
 	case ANGRYFEZ:
-		if (shipwait < 300)
-			SYSTEM_BLIT(64, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+		SYSTEM_BLIT(64, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 		break;
 	case ENEMYHEART:
-		if (shipwait < 300)
-			SYSTEM_BLIT(48, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+		SYSTEM_BLIT(48, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 		break;
 	case EXPLOSION:
 		if (ShippyObjects[objnumber].special <= 31)
@@ -632,18 +632,98 @@ void DoAi(int number)
 		{
 			ShippyObjects[number].x = 150;
 			ShippyObjects[number].y = 144;
-			ShippyObjects[number].health = -180;
-			--ShippyObjects[number].lives;
+			if (ShippyObjects[number].lives >= 0)
+				--ShippyObjects[number].lives;
 			if (ShippyObjects[number].lives < 0)
 			{
-				AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
-				AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
-				AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
-				waitforkey = 480;
-				shipwait = 600;
+				if (((ShippyObjects[number].special & SHIPPY_SPECIAL_INITIAL) != SHIPPY_SPECIAL_INITIAL) && (ShippyObjects[number].special != SHIPPY_SPECIAL_GAMEOVER))
+				{
+					if (score <= winners[13].score)
+					{
+						ShippyObjects[number].special = SHIPPY_SPECIAL_GAMEOVER;
+					}
+					else
+					{
+						ShippyObjects[number].special = SHIPPY_SPECIAL_INITIAL | SHIPPY_SPECIAL_FIRED;
+						strcpy(curname[number], "   ");
+						operational = 1;
+						waitforkey = 50;
+						currchar = 'A';
+					}
+				}
+				if ((ShippyObjects[number].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL)
+				{
+					if ((ShippyObjects[number].special & SHIPPY_SPECIAL_FIRED) == SHIPPY_SPECIAL_FIRED)
+					{
+						if (!jaction)
+						{
+							ShippyObjects[number].special &= ~SHIPPY_SPECIAL_FIRED;
+						}
+						else
+						{
+							return;
+						}
+					}
+					if (operational == 4)
+					{
+						curname[number][3] = 0;
+						strcpy(winners[14].name, curname[number]);
+						winners[14].level = level;
+						winners[14].score = score;
+						winners[14].last = 1;
+						for (int i = 0; i < MAXSCORE; i++)
+						qsort(winners, MAXSCORE, sizeof(struct HISCORE), compare);
+						waitforkey = 360;
+						ShippyObjects[number].special = SHIPPY_SPECIAL_GAMEOVER;
+						return;
+					}
 
-				gameover = 1;
+					if (jdirx <= -1)
+					{
+						--currchar;
+						if (currchar < 'A')
+							currchar = 'Z';
+						waitforkey = 15;
+					}
+					if (jdirx >= 1)
+					{
+						++currchar;
+						if (currchar > 'Z')
+							currchar = 'A';
+						waitforkey = 15;
+					}
+
+					if (jaction)
+					{
+						curname[number][operational - 1] = currchar;
+						++operational;
+						currchar = 'A';
+						waitforkey = 20;
+					}
+
+					if (jsecond)
+					{
+						curname[number][operational - 1] = ' ';
+						--operational;
+						if (operational < 1)
+							operational = 1;
+						currchar = 'A';
+						waitforkey = 20;
+					}
+				}
+				if (ShippyObjects[number].special == SHIPPY_SPECIAL_GAMEOVER)
+				{
+					AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
+					AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
+					AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
+					waitforkey = 480;
+					shipwait = 600;
+
+					gameover = 1;
+				}
 			}
+			else
+				ShippyObjects[number].health = -180;
 			return;
 		}
 		if (ShippyObjects[number].health < 0)
@@ -676,33 +756,33 @@ void DoAi(int number)
 				switch (powerup)
 				{
 				case POWER_RAPID:
-					if (ShippyObjects[number].special == 0)
+					if (ShippyObjects[number].special == SHIPPY_SPECIAL_NONE)
 					{
 						if (shots < 10)
 						{
-							AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, 0, 0, 0, NULL, 0, 0);
+							AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, number, 0, 0, NULL, 0, 0);
 							audio_play(DATADIR "shot.wav");
 							++shots;
 							++firedshots;
 						}
-						ShippyObjects[number].special = 1;
+						ShippyObjects[number].special = SHIPPY_SPECIAL_FIRED;
 					}
 
 					break;
 
 				case POWER_HELIX:
-					if (ShippyObjects[number].special == 0)
+					if (ShippyObjects[number].special == SHIPPY_SPECIAL_NONE)
 					{
 						if (shots < 6)
 						{
 							audio_play(DATADIR "helix.wav");
-							AddObject(BULLWAVE, ShippyObjects[number].x - 6, ShippyObjects[number].y - 8, 0, -16, 0, NULL, 0, 0);
-							AddObject(BULLWAVE, ShippyObjects[number].x + 6, ShippyObjects[number].y - 8, 0, 16, 0, NULL, 0, 0);
+							AddObject(BULLWAVE, ShippyObjects[number].x - 6, ShippyObjects[number].y - 8, number, -16, 0, NULL, 0, 0);
+							AddObject(BULLWAVE, ShippyObjects[number].x + 6, ShippyObjects[number].y - 8, number, 16, 0, NULL, 0, 0);
 							shots += 2;
 							firedshots += 2;
 
 						}
-						ShippyObjects[number].special = 1;
+						ShippyObjects[number].special = SHIPPY_SPECIAL_FIRED;
 					}
 
 					break;
@@ -712,22 +792,22 @@ void DoAi(int number)
 			}
 			else
 			{
-				if (ShippyObjects[number].special == 0)
+				if (ShippyObjects[number].special == SHIPPY_SPECIAL_NONE)
 				{
 					if (shots < 3)
 					{
-						AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, 0, 0, 0, NULL, 0, 0);
+						AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, number, 0, 0, NULL, 0, 0);
 						audio_play(DATADIR "shot.wav");
 						++shots;
 						++firedshots;
 					}
-					ShippyObjects[number].special = 1;
+					ShippyObjects[number].special = SHIPPY_SPECIAL_FIRED;
 				}
 			}
 		}
 		else
 		{
-			ShippyObjects[number].special = 0;
+			ShippyObjects[number].special = SHIPPY_SPECIAL_NONE;
 		}
 
 		if (gamestate == GAME)
@@ -759,14 +839,30 @@ void DoAi(int number)
 			ShippyObjects[number].x = 232;
 		if (ShippyObjects[number].y > 144)
 			ShippyObjects[number].y = 144;
+
+#ifdef GODMODE
+		if (jsecond)
+			leftmonsters = 0;
+#else
+
+		if (jsecond && BELATED >= 0)
+		{
+			BELATED = 1 - BELATED;
+			if (BELATED == 1)
+				waitforkey = 60;
+			else
+				BELATED = -15;
+		}
+		if (BELATED == 1)
+			return;
+		if (BELATED < 0)
+			++BELATED;
+#endif
 		break;
 
 	case ENEMYHEART:
 	case ENEMYSHIPPY:
 	case ANGRYFEZ:
-		if (shipwait > 300)
-			return;
-
 		if (ShippyObjects[number].type == ENEMYHEART)
 		{
 			if (IsHit(ShippyObjects[number].dx, ShippyObjects[number].dy, 32, ShippyObjects[number].x, ShippyObjects[number].y, 8))
@@ -1291,90 +1387,7 @@ void ExecShippy()
 		}
 		break;
 
-	case INITIALS:
-
-		if (operational == 0)
-		{
-			winners[14].score = score;
-			winners[14].level = level;
-			strcpy(winners[14].name, "   ");
-			operational = 1;
-			waitforkey = 15;
-			currchar = 'A';
-		}
-
-		if (operational == 4)
-		{
-			winners[14].name[3] = 0;
-			winners[14].level = level;
-			winners[14].last = 1;
-			qsort(winners, MAXSCORE, sizeof(struct HISCORE), compare);
-			waitforkey = 360;
-			gamestate = SCORES;
-			powerupframe = 0;
-			shipwait = 0;
-			leftmonsters = 0;
-			level = 0;
-			gameover = 0;
-			operational = 0;
-			return;
-		}
-
-		if (jdirx <= -1)
-		{
-			--currchar;
-			if (currchar < 'A')
-				currchar = 'Z';
-			waitforkey = 15;
-		}
-		if (jdirx >= 1)
-		{
-			++currchar;
-			if (currchar > 'Z')
-				currchar = 'A';
-			waitforkey = 15;
-		}
-
-		if (jaction)
-		{
-			winners[14].name[operational - 1] = currchar;
-			++operational;
-			currchar = 'A';
-			waitforkey = 20;
-		}
-
-		if (jsecond)
-		{
-			winners[14].name[operational - 1] = ' ';
-			--operational;
-			if (operational < 1)
-				operational = 1;
-			currchar = 'A';
-			waitforkey = 20;
-		}
-
-		break;
-
 	case GAME:
-
-#ifdef GODMODE
-		if (jsecond)
-			leftmonsters = 0;
-#else
-
-		if (jsecond && BELATED >= 0)
-		{
-			BELATED = 1 - BELATED;
-			if (BELATED == 1)
-				waitforkey = 60;
-			else
-				BELATED = -15;
-		}
-		if (BELATED == 1)
-			return;
-		if (BELATED < 0)
-			++BELATED;
-#endif
 
 		if (score > extralife)
 		{
@@ -1421,24 +1434,15 @@ void ExecShippy()
 				shipwait--;
 			if ((jaction) || (shipwait == 0))
 			{
-				if (score <= winners[13].score)
-				{
-					waitforkey = 360;
-					gamestate = SCORES;
-					powerupframe = 0;
-					shipwait = 0;
-					leftmonsters = 0;
-					level = 0;
-					gameover = 0;
-					operational = 0;
-					return;
-				}
-				for (increment = 0; increment < 14; ++increment)
-					winners[increment].last = 0;
-				gamestate = INITIALS;
-				audio_music(DATADIR "score.xm");
-				waitforkey = 30;
+				waitforkey = 360;
+				gamestate = SCORES;
+				powerupframe = 0;
+				shipwait = 0;
+				leftmonsters = 0;
+				level = 0;
+				gameover = 0;
 				operational = 0;
+				return;
 			}
 		}
 		break;
@@ -1637,8 +1641,7 @@ int SHIPPY_MAIN(int argc, char *argv[])
 
 			for (i = 0; i < MAXSHIPPY; ++i)
 			{
-				if (gamestate != INITIALS)
-					RenderShippy(i);
+				RenderShippy(i);
 			}
 			DrawOverlay();
 			SYSTEM_FINISHRENDER();
