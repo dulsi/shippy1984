@@ -106,7 +106,8 @@ char tim[64];
 int aiwavelet[240];
 
 char curname[MAXPLAYERS][4];
-char currchar = 'A';
+char currchar[MAXPLAYERS] = { 'A', 'A' };
+int curlevel[MAXPLAYERS];
 int operational = 0;
 int missedshots = 0;
 int firedshots = 0;
@@ -225,7 +226,7 @@ void DrawOverlay()
 				break;
 			}
 		}
-		if ((ShippyObjects[0].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL)
+		if (ShippyObjects[0].special == SHIPPY_SPECIAL_INITIAL)
 		{
 			PrintMessage("ENTER INITIALS!", 0, 146, TEXT_WHITE);
 			if (operational == 2)
@@ -238,8 +239,25 @@ void DrawOverlay()
 				PrintChar(curname[0][1], 8, 152, TEXT_WHITE);
 			}
 
-			PrintChar(currchar, 0 + ((operational - 1) * 8), 152, TEXT_YELLOW);
+			PrintChar(currchar[0], 0 + ((operational - 1) * 8), 152, TEXT_YELLOW);
 			SYSTEM_BLIT(0, 96, 0 + ((operational - 1) * 8), 152, 8, 8);
+			break;
+		}
+		if (ShippyObjects[1].special == SHIPPY_SPECIAL_INITIAL)
+		{
+			PrintMessage("ENTER INITIALS!", 240 - 8 * 15, 146, TEXT_WHITE);
+			if (operational == 2)
+			{
+				PrintChar(curname[1][0], 208, 152, TEXT_WHITE);
+			}
+			else if (operational == 3)
+			{
+				PrintChar(curname[1][0], 208, 152, TEXT_WHITE);
+				PrintChar(curname[1][1], 216, 152, TEXT_WHITE);
+			}
+
+			PrintChar(currchar[1], 208 + ((operational - 1) * 8), 152, TEXT_YELLOW);
+			SYSTEM_BLIT(0, 96, 208 + ((operational - 1) * 8), 152, 8, 8);
 			break;
 		}
 		break;
@@ -350,18 +368,34 @@ void NewGame(int mlevel)
 		shipwait = 600;
 		break;
 	case 1:
-		for (int i = 0; i < MAXPLAYERS; i++)
-			score[i] = 0;
-		diedlast = 0;
-		for (increment = 0; increment < MAXSHIPPY; ++increment)
+		for (increment = MAXPLAYERS; increment < MAXSHIPPY; ++increment)
 		{
 			ShippyObjects[increment].used = 0;
 		}
-		AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
-		if (numplayers == 2)
-			AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+		if (diedlast == 0)
+		{
+			for (increment = 0; increment < MAXPLAYERS; increment++)
+			{
+				score[increment] = 0;
+				ShippyObjects[increment].used = 0;
+			}
+			AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+			if (numplayers == 2)
+				AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+			else
+				AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
+		}
 		else
-			AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
+		{
+			diedlast = 0;
+			for (increment = 0; increment < MAXPLAYERS; increment++)
+			{
+				if ((ShippyObjects[increment].special != SHIPPY_SPECIAL_GAMEOVER) && (ShippyObjects[increment].health <= -1))
+				{
+					ShippyObjects[increment].health = 10;
+				}
+			}
+		}
 		AddObject(LEVELMESSAGE, 0, 0, mlevel, 180, 0, NULL, 0, 0);
 		for (increment = 0; increment < 20; ++increment)
 		{
@@ -386,6 +420,13 @@ void NewGame(int mlevel)
 
 		break;
 	default:
+		for (increment = 0; increment < MAXPLAYERS; increment++)
+		{
+			if ((ShippyObjects[increment].special != SHIPPY_SPECIAL_GAMEOVER) && (ShippyObjects[increment].health <= -1))
+			{
+				ShippyObjects[increment].health = 10;
+			}
+		}
 		for (increment = MAXPLAYERS; increment < MAXSHIPPY; ++increment)
 		{
 			ShippyObjects[increment].used = 0;
@@ -667,7 +708,7 @@ void DoAi(int number)
 				--ShippyObjects[number].lives;
 			if (ShippyObjects[number].lives < 0)
 			{
-				if (((ShippyObjects[number].special & SHIPPY_SPECIAL_INITIAL) != SHIPPY_SPECIAL_INITIAL) && (ShippyObjects[number].special != SHIPPY_SPECIAL_GAMEOVER))
+				if ((ShippyObjects[number].special != SHIPPY_SPECIAL_INITIAL) && (ShippyObjects[number].special != SHIPPY_SPECIAL_GAMEOVER))
 				{
 					for (int i = 0; i < MAXSCORE; i++)
 						if (winners[i].last == number + 1)
@@ -678,60 +719,37 @@ void DoAi(int number)
 					}
 					else
 					{
-						ShippyObjects[number].special = SHIPPY_SPECIAL_INITIAL | SHIPPY_SPECIAL_FIRED;
+						ShippyObjects[number].special = SHIPPY_SPECIAL_INITIAL;
 						strcpy(curname[number], "   ");
 						operational = 1;
-						waitforkey = 50;
-						currchar = 'A';
+						waitforkey[number] = 50;
+						currchar[number] = 'A';
+						curlevel[number] = level;
 					}
 				}
-				if ((ShippyObjects[number].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL)
+				if (ShippyObjects[number].special == SHIPPY_SPECIAL_INITIAL)
 				{
-					if ((ShippyObjects[number].special & SHIPPY_SPECIAL_FIRED) == SHIPPY_SPECIAL_FIRED)
-					{
-						if (!jaction)
-						{
-							ShippyObjects[number].special &= ~SHIPPY_SPECIAL_FIRED;
-						}
-						else
-						{
-							return;
-						}
-					}
-					if (operational == 4)
-					{
-						curname[number][3] = 0;
-						strcpy(winners[14].name, curname[number]);
-						winners[14].level = level;
-						winners[14].score = score[number];
-						winners[14].last = number + 1;
-						qsort(winners, MAXSCORE, sizeof(struct HISCORE), compare);
-						waitforkey = 360;
-						ShippyObjects[number].special = SHIPPY_SPECIAL_GAMEOVER;
-						return;
-					}
-
 					if (jdirx[number] <= -1)
 					{
-						--currchar;
-						if (currchar < 'A')
-							currchar = 'Z';
-						waitforkey = 15;
+						--currchar[number];
+						if (currchar[number] < 'A')
+							currchar[number] = 'Z';
+						waitforkey[number] = 15;
 					}
 					if (jdirx[number] >= 1)
 					{
-						++currchar;
-						if (currchar > 'Z')
-							currchar = 'A';
-						waitforkey = 15;
+						++currchar[number];
+						if (currchar[number] > 'Z')
+							currchar[number] = 'A';
+						waitforkey[number] = 15;
 					}
 
 					if (jaction[number])
 					{
-						curname[number][operational - 1] = currchar;
+						curname[number][operational - 1] = currchar[number];
 						++operational;
-						currchar = 'A';
-						waitforkey = 20;
+						currchar[number] = 'A';
+						waitforkey[number] = 20;
 					}
 
 					if (jsecond[number])
@@ -740,8 +758,20 @@ void DoAi(int number)
 						--operational;
 						if (operational < 1)
 							operational = 1;
-						currchar = 'A';
-						waitforkey = 20;
+						currchar[number] = 'A';
+						waitforkey[number] = 20;
+					}
+					if (operational == 4)
+					{
+						curname[number][3] = 0;
+						strcpy(winners[14].name, curname[number]);
+						winners[14].level = curlevel[number];
+						winners[14].score = score[number];
+						winners[14].last = number + 1;
+						qsort(winners, MAXSCORE, sizeof(struct HISCORE), compare);
+						waitforkey[number] = 360;
+						ShippyObjects[number].special = SHIPPY_SPECIAL_GAMEOVER;
+						return;
 					}
 				}
 			}
@@ -751,12 +781,6 @@ void DoAi(int number)
 		}
 		if (ShippyObjects[number].health < 0)
 		{
-			++ShippyObjects[number].health;
-			if (ShippyObjects[number].health >= -1)
-			{
-				ShippyObjects[number].health = 10;
-				NewGame(level);
-			}
 			return;
 		}
 
@@ -872,7 +896,7 @@ void DoAi(int number)
 		{
 			BELATED = 1 - BELATED;
 			if (BELATED == 1)
-				waitforkey = 60;
+				waitforkey[0] = 60;
 			else
 				BELATED = -15;
 		}
@@ -979,7 +1003,7 @@ void DoAi(int number)
 		}
 		for (int i = 0; i < MAXPLAYERS; i++)
 		{
-			if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || ((ShippyObjects[i].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL))
+			if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || (ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL))
 				continue;
 			if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 8, ShippyObjects[i].x, ShippyObjects[i].y, 8))
 			{
@@ -993,11 +1017,11 @@ void DoAi(int number)
 											ShippyObjects[number].x * 64,
 											ShippyObjects[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
 					}
-					diedlast = 1;
 
 					audio_play(DATADIR "die.wav");
 					ShippyObjects[number].type = EXPLOSION;
 					ShippyObjects[number].special = 4;
+					--leftmonsters;
 				}
 #endif
 			}
@@ -1190,7 +1214,7 @@ void DoAi(int number)
 		{
 			for (int i = 0; i < MAXPLAYERS; i++)
 			{
-				if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || ((ShippyObjects[i].special & SHIPPY_SPECIAL_INITIAL) == SHIPPY_SPECIAL_INITIAL))
+				if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || (ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL))
 					continue;
 				if (IsHit(ShippyObjects[number].x, ShippyObjects[number].y, 2, ShippyObjects[i].x, ShippyObjects[i].y, 8))
 				{
@@ -1208,7 +1232,6 @@ void DoAi(int number)
 												[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
 						}
 
-						diedlast = 1;
 						audio_play(DATADIR "die.wav");
 						ShippyObjects[number].type = EXPLOSION;
 						ShippyObjects[number].special = 4;
@@ -1322,11 +1345,11 @@ void RestoreHS()
 
 	strcpy(winners[12].name, "EJP");
 	winners[12].level = 4;
-	winners[12].score = 50000;
+	winners[12].score = 500;
 
 	strcpy(winners[13].name, "SCB");
 	winners[13].level = 1;
-	winners[13].score = 40000;
+	winners[13].score = 400;
 	for (i = 0; i < 14; ++i)
 		winners[i].last = 0;
 
@@ -1338,7 +1361,7 @@ void InitShippy()
 	RestoreHS();
 
 	gamestate = SPLASH;
-	waitforkey = 180;
+	waitforkey[0] = waitforkey[1] = 180;
 	done = 0;
 	level = 0;
 	shipwait = 600;
@@ -1396,7 +1419,7 @@ void ExecShippy()
 			if (operational == 0)
 				audio_play(DATADIR "splash.wav");
 		}
-		if (waitforkey == 0)
+		if (waitforkey[0] == 0)
 		{
 			PrintMessage("PRESS CTRL OR BUTTON 1", 32, 98, TEXT_WHITE);
 
@@ -1420,7 +1443,6 @@ void ExecShippy()
 			level = 0;
 			shipwait = 0;
 			gameover = 0;
-			waitforkey = 60;
 			SYSTEM_CLEARSCREEN();
 			operational = 0;
 
@@ -1449,20 +1471,39 @@ void ExecShippy()
 			}
 			if (gameover == 0)
 			{
-				int over = 1;
+				int over = 2;
 				for (int i = 0; i < MAXPLAYERS; i++)
 				{
 					if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
 					{
-						over = 0;
+						if ((over > 0) && (ShippyObjects[i].health < 0))
+							over = 1;
+						else
+							over = 0;
 					}
 				}
-				if (over)
+				if (over == 1)
+				{
+					diedlast = 1;
+					for (int i = 0; i < MAXPLAYERS; i++)
+					{
+						if (ShippyObjects[i].health < 0)
+						{
+							++ShippyObjects[i].health;
+							if (ShippyObjects[i].health >= -1)
+							{
+								ShippyObjects[i].health = 10;
+								NewGame(level);
+							}
+						}
+					}
+				}
+				else if (over == 2)
 				{
 					AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
 					AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
 					AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
-					waitforkey = 480;
+					waitforkey[0] = waitforkey[1] = 480;
 					shipwait = 600;
 
 					gameover = 1;
@@ -1504,7 +1545,7 @@ void ExecShippy()
 				shipwait--;
 			if ((jaction[0]) || (shipwait == 0))
 			{
-				waitforkey = 360;
+				waitforkey[0] = waitforkey[1] = 360;
 				gamestate = SCORES;
 				powerupframe = 0;
 				shipwait = 0;
@@ -1547,7 +1588,7 @@ void ExecShippy()
 					level = 0;
 					gameover = 0;
 					operational = 0;
-					waitforkey = 30;
+					waitforkey[0] = waitforkey[0] = 30;
 					return;
 				}
 				else
@@ -1586,6 +1627,7 @@ void ExecShippy()
 					operational = 1800;
 					powerupframe = 0;
 					shipwait = 0;
+					numplayers = 1;
 				}
 			}
 		}
@@ -1609,6 +1651,46 @@ void ExecShippy()
 			{
 				DoAi(increment);
 			}
+			if (gameover == 0)
+			{
+				int over = 2;
+				for (int i = 0; i < MAXPLAYERS; i++)
+				{
+					if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
+					{
+						if ((over > 0) && (ShippyObjects[i].health < 0))
+							over = 1;
+						else
+							over = 0;
+					}
+				}
+				if (over == 1)
+				{
+					diedlast = 1;
+					for (int i = 0; i < MAXPLAYERS; i++)
+					{
+						if (ShippyObjects[i].health < 0)
+						{
+							++ShippyObjects[i].health;
+							if (ShippyObjects[i].health >= -1)
+							{
+								ShippyObjects[i].health = 10;
+								NewGame(level);
+							}
+						}
+					}
+				}
+				else if (over == 2)
+				{
+					AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
+					AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
+					AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
+					waitforkey[0] = waitforkey[1] = 480;
+					shipwait = 600;
+
+					gameover = 1;
+				}
+			}
 			if (shipwait > 0)
 				--shipwait;
 			if (powerupframe > 0)
@@ -1622,7 +1704,7 @@ void ExecShippy()
 			if (jaction[0] || players[0] || players[1])
 			{
 				operational = 0;
-				waitforkey = 30;
+				waitforkey[0] = waitforkey[1] = 30;
 			}
 			return;
 		}

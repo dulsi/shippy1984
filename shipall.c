@@ -6,7 +6,7 @@ int jdirx[2] = { 0, 0 };
 int jdiry[2] = { 0, 0 };
 int jaction[2] = { 0, 0 };
 int jsecond[2] = { 0, 0 };
-int waitforkey = 360;
+int waitforkey[2] = { 360, 360 };
 int players[2] = { 0, 0 };
 
 volatile int objectsynch = 0;
@@ -346,9 +346,9 @@ void SYSTEM_POLLINPUT()
 	}
 #endif
 
-	if (waitforkey > 0)
+	if (waitforkey[0] > 0)
 	{
-		--waitforkey;
+		--waitforkey[0];
 		return;
 	}
 

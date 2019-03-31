@@ -36,7 +36,7 @@ int jdirx[2] = { 0, 0 };
 int jdiry[2] = { 0, 0 };
 int jaction[2] = { 0, 0 };
 int jsecond[2] = { 0, 0 };
-int waitforkey = 360;
+int waitforkey[2] = { 360, 360 };
 int players[2] = { 0, 0 };
 
 volatile int objectsynch = 0;
@@ -334,41 +334,50 @@ void SYSTEM_POLLINPUT()
 /*    if(key[SHIPPY_RETURN] && key[SHIPPY_LALT])
         SDL_WM_ToggleFullScreen(screen);*/
 
-	if (waitforkey > 0)
+	if (waitforkey[0] > 0)
 	{
-		--waitforkey;
-		return;
+		--waitforkey[0];
+	}
+	else
+	{
+		if (Joystick)
+		{
+			SDL_JoystickUpdate();
+			jaction[0] = SDL_JoystickGetButton(Joystick, 0);
+			jsecond[0] = SDL_JoystickGetButton(Joystick, 1);
+			jdirx[0] = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
+			jdiry[0] = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
+		}
+
+		if (jdirx[0] == 0)
+			jdirx[0] = (key[SHIPPY_RIGHT] - key[SHIPPY_LEFT]) * 2;
+		if (jdiry[0] == 0)
+			jdiry[0] = key[SHIPPY_DOWN] - key[SHIPPY_UP];
+		if (jaction[0] == 0)
+			jaction[0] = key[SHIPPY_LCTRL];
+		if (jsecond[0] == 0)
+			jsecond[0] = key[SHIPPY_BACKSPACE];
+
+		players[0] = key[SHIPPY_1];
 	}
 
-	if (Joystick)
+	if (waitforkey[1] > 0)
 	{
-		SDL_JoystickUpdate();
-		jaction[0] = SDL_JoystickGetButton(Joystick, 0);
-		jsecond[0] = SDL_JoystickGetButton(Joystick, 1);
-		jdirx[0] = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
-		jdiry[0] = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
+		--waitforkey[1];
 	}
+	else
+	{
+		if (jdirx[1] == 0)
+			jdirx[1] = (key[SHIPPY_G] - key[SHIPPY_D]) * 2;
+		if (jdiry[1] == 0)
+			jdiry[1] = key[SHIPPY_F] - key[SHIPPY_R];
+		if (jaction[1] == 0)
+			jaction[1] = key[SHIPPY_Q];
+		if (jsecond[1] == 0)
+			jsecond[1] = key[SHIPPY_S];
 
-	if (jdirx[0] == 0)
-		jdirx[0] = (key[SHIPPY_RIGHT] - key[SHIPPY_LEFT]) * 2;
-	if (jdiry[0] == 0)
-		jdiry[0] = key[SHIPPY_DOWN] - key[SHIPPY_UP];
-	if (jaction[0] == 0)
-		jaction[0] = key[SHIPPY_LCTRL];
-	if (jsecond[0] == 0)
-		jsecond[0] = key[SHIPPY_BACKSPACE];
-
-	if (jdirx[1] == 0)
-		jdirx[1] = (key[SHIPPY_G] - key[SHIPPY_D]) * 2;
-	if (jdiry[1] == 0)
-		jdiry[1] = key[SHIPPY_F] - key[SHIPPY_R];
-	if (jaction[1] == 0)
-		jaction[1] = key[SHIPPY_Q];
-	if (jsecond[1] == 0)
-		jsecond[1] = key[SHIPPY_S];
-
-	players[1] = key[SHIPPY_2];
-	players[0] = key[SHIPPY_1];
+		players[1] = key[SHIPPY_2];
+	}
 }
 
 void SYSTEM_IDLE()
