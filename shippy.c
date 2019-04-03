@@ -1364,6 +1364,48 @@ void RestoreHS()
 
 }
 
+#define GAMESTATE_ACTIVE 0
+#define GAMESTATE_GAMEOVER 1
+#define GAMESTATE_NEXTLEVEL 2
+#define GAMESTATE_REDOLEVEL 3
+#define GAMESTATE_INITIALS 5
+
+int GetGameState()
+{
+	int test = 1;
+	for (int i = 0; i < MAXPLAYERS; i++)
+	{
+		if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
+		{
+			test = 0;
+		}
+	}
+	if (test)
+		return GAMESTATE_GAMEOVER;
+	for (int i = 0; i < MAXPLAYERS; i++)
+	{
+		if ((ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER) && (ShippyObjects[i].special != SHIPPY_SPECIAL_INITIAL))
+		{
+			if (ShippyObjects[i].health >= 0)
+			{
+				if (leftmonsters == 0)
+					return GAMESTATE_NEXTLEVEL;
+				else
+					return GAMESTATE_ACTIVE;
+			}
+		}
+	}
+	for (int i = 0; i < MAXPLAYERS; i++)
+	{
+		if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
+		{
+			if (ShippyObjects[i].health < 0)
+				return GAMESTATE_REDOLEVEL;
+		}
+	}
+	return GAMESTATE_INITIALS;
+}
+
 void InitShippy()
 {
 
@@ -1470,7 +1512,7 @@ void ExecShippy()
 
 			}
 		}
-		if (leftmonsters > 0 && done == 0 && gameover == 0)
+		if (done == 0)
 		{
 			++timeattack;
 			for (increment = 0; increment < MAXSHIPPY; ++increment)
@@ -1480,45 +1522,41 @@ void ExecShippy()
 			}
 			if (gameover == 0)
 			{
-				int over = 2;
-				int initials = 1;
-				for (int i = 0; i < MAXPLAYERS; i++)
+				int curstate = GetGameState();
+				switch (curstate)
 				{
-					if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
-					{
-						if ((over > 0) && ((ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL) || (ShippyObjects[i].health < 0)))
-							over = 1;
-						else
-							over = 0;
-						if (ShippyObjects[i].special != SHIPPY_SPECIAL_INITIAL)
-							initials = 0;
-					}
-				}
-				if ((over == 1) && (initials == 0))
-				{
-					diedlast = 1;
-					for (int i = 0; i < MAXPLAYERS; i++)
-					{
-						if (ShippyObjects[i].health < 0)
+					case GAMESTATE_REDOLEVEL:
+						diedlast = 1;
+						for (int i = 0; i < MAXPLAYERS; i++)
 						{
-							++ShippyObjects[i].health;
-							if (ShippyObjects[i].health >= -1)
+							if (ShippyObjects[i].health < 0)
 							{
-								ShippyObjects[i].health = 10;
-								NewGame(level);
+								++ShippyObjects[i].health;
+								if (ShippyObjects[i].health >= -1)
+								{
+									ShippyObjects[i].health = 10;
+									NewGame(level);
+								}
 							}
 						}
-					}
-				}
-				else if (over == 2)
-				{
-					AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
-					AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
-					AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
-					waitforkey[0] = waitforkey[1] = 480;
-					shipwait = 600;
+						break;
+					case GAMESTATE_GAMEOVER:
+						AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
+						AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
+						AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
+						waitforkey[0] = waitforkey[1] = 480;
+						shipwait = 600;
 
-					gameover = 1;
+						gameover = 1;
+						break;
+					case GAMESTATE_NEXTLEVEL:
+						for (int i = 0; i < MAXPLAYERS; i++)
+							shots[i] = 0;
+						++level;
+						NewGame(level);
+						break;
+					default:
+						break;
 				}
 			}
 			if (shipwait > 0)
@@ -1530,44 +1568,23 @@ void ExecShippy()
 				if (score[i] > highscore)
 					highscore = score[i];
 			}
+			if (gameover == 1)
+			{
+				PrintMessage("GAME OVER!", 88, 112, TEXT_RED);
+				if ((jaction[0]) || (shipwait == 0))
+				{
+					waitforkey[0] = waitforkey[1] = 360;
+					gamestate = SCORES;
+					powerupframe = 0;
+					shipwait = 0;
+					leftmonsters = 0;
+					level = 0;
+					gameover = 0;
+					operational = 0;
+					return;
+				}
+			}
 			return;
-		}
-
-		if (gameover == 0)
-		{
-			for (int i = 0; i < MAXPLAYERS; i++)
-				shots[i] = 0;
-			++level;
-			NewGame(level);
-		}
-		else
-		{
-
-			for (increment = 1; increment < MAXSHIPPY; ++increment)
-			{
-				DoAi(increment);
-			}
-
-			for (int i = 0; i < MAXPLAYERS; i++)
-			{
-				if (score[i] > highscore)
-					highscore = score[i];
-			}
-			PrintMessage("GAME OVER!", 88, 112, TEXT_RED);
-			if (shipwait > 0)
-				shipwait--;
-			if ((jaction[0]) || (shipwait == 0))
-			{
-				waitforkey[0] = waitforkey[1] = 360;
-				gamestate = SCORES;
-				powerupframe = 0;
-				shipwait = 0;
-				leftmonsters = 0;
-				level = 0;
-				gameover = 0;
-				operational = 0;
-				return;
-			}
 		}
 		break;
 

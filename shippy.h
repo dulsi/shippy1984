@@ -39,6 +39,7 @@ void RenderShippy(int objnumber);
 void DoAi(int number);
 void StoreHS();
 void RestoreHS();
+int GetGameState();
 void InitShippy();
 void ExecShippy();
 int SHIPPY_MAIN(int argc, char *argv[]);
