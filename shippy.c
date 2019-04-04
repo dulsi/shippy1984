@@ -417,13 +417,6 @@ void NewGame(int mlevel)
 
 		break;
 	default:
-		for (increment = 0; increment < MAXPLAYERS; increment++)
-		{
-			if ((ShippyObjects[increment].special != SHIPPY_SPECIAL_GAMEOVER) && (ShippyObjects[increment].health <= -1))
-			{
-				ShippyObjects[increment].health = 10;
-			}
-		}
 		for (increment = MAXPLAYERS; increment < MAXSHIPPY; ++increment)
 		{
 			ShippyObjects[increment].used = 0;
@@ -521,7 +514,7 @@ void NewGame(int mlevel)
 		}
 
 		for (int i = 0; i < MAXPLAYERS; i++)
-			if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
+			if ((ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER) && (ShippyObjects[i].special != SHIPPY_SPECIAL_INITIAL) && (ShippyObjects[i].health > 0))
 				score[i] += bonus;
 		AddObject(MESSAGE, 0, 32, 180, 180, 0, acc, 0, 0);
 		AddObject(MESSAGE, 0, 40, 180, 180, 0, eff, 0, 0);
@@ -536,6 +529,13 @@ void NewGame(int mlevel)
 		firedshots = 0;
 		diedlast = 0;
 
+		for (increment = 0; increment < MAXPLAYERS; increment++)
+		{
+			if ((ShippyObjects[increment].special != SHIPPY_SPECIAL_GAMEOVER) && (ShippyObjects[increment].health <= -1))
+			{
+				ShippyObjects[increment].health = 10;
+			}
+		}
 		break;
 	}
 
