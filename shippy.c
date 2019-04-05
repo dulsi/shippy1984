@@ -460,8 +460,16 @@ void NewGame(int mlevel)
 			leftmonsters += adder;
 		}
 
-		if (diedlast == 1)
+		if (diedlast != 0)
 		{
+			for (increment = 0; increment < MAXPLAYERS; increment++)
+			{
+				if ((ShippyObjects[increment].special != SHIPPY_SPECIAL_GAMEOVER) && (ShippyObjects[increment].health <= -1))
+				{
+					ShippyObjects[increment].health = 10;
+				}
+			}
+
 			AddObject(MESSAGE, 0, 92, 120, 300, 0, "READY", 0, 0);
 			AddObject(MESSAGE, 0, 92, 180, 480, 0, "GO!", 0, 0);
 
@@ -1400,7 +1408,9 @@ int GetGameState()
 		if (ShippyObjects[i].special != SHIPPY_SPECIAL_GAMEOVER)
 		{
 			if (ShippyObjects[i].health < 0)
+			{
 				return GAMESTATE_REDOLEVEL;
+			}
 		}
 	}
 	return GAMESTATE_INITIALS;
