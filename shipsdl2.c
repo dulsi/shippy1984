@@ -275,6 +275,7 @@ void SYSTEM_BG()
 
 void SYSTEM_DRAW_BG(char *bmp)
 {
+	SYSTEM_CLEARSCREEN();
 	src.x = 0;
 	src.y = 0;
 	src.w = 240;

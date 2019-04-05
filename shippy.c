@@ -1430,12 +1430,9 @@ void ExecShippy()
 	{
 
 	case SPLASH:
-		if (operational == 150)
-		{
-			SYSTEM_CLEARSCREEN();
-		}
 		if (operational > 30)
 		{
+			SYSTEM_CLEARSCREEN();
 			int diff = 150 - operational;
 			PrintMessage("SHIPPY1984 BIOS POST", 8, 8, TEXT_CYAN);
 			PrintMessage("ROM 1 0X01", 8, 24, TEXT_RED);
