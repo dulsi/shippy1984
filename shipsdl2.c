@@ -21,6 +21,7 @@
 #define SHIPPY_S 14
 #define SHIPPY_1 15
 #define SHIPPY_2 16
+#define SHIPPY_SPACE 17
 
 SDL_Window *screen = NULL;
 SDL_Renderer *renderer = NULL;
@@ -356,6 +357,8 @@ void SYSTEM_POLLINPUT()
 			jdiry[0] = key[SHIPPY_DOWN] - key[SHIPPY_UP];
 		if (jaction[0] == 0)
 			jaction[0] = key[SHIPPY_LCTRL];
+		if (jaction[0] == 0)
+			jaction[0] = key[SHIPPY_SPACE];
 		if (jsecond[0] == 0)
 			jsecond[0] = key[SHIPPY_BACKSPACE];
 
@@ -379,6 +382,8 @@ void SYSTEM_POLLINPUT()
 
 		players[1] = key[SHIPPY_2];
 	}
+	if (players[0] && players[1])
+		done = 1;
 }
 
 void SYSTEM_IDLE()
@@ -460,6 +465,9 @@ void SYSTEM_IDLE()
 				break;
 			case SDLK_2:
 				keyIndx = SHIPPY_2;
+				break;
+			case SDLK_SPACE:
+				keyIndx = SHIPPY_SPACE;
 				break;
 			default:
 				break;
