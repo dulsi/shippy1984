@@ -40,6 +40,7 @@ void DoAi(int number);
 void StoreHS();
 void RestoreHS();
 int GetGameState();
+void StartGameState();
 void InitShippy();
 void ExecShippy();
 int SHIPPY_MAIN(int argc, char *argv[]);

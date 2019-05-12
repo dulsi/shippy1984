@@ -369,20 +369,7 @@ void NewGame(int mlevel)
 		{
 			ShippyObjects[increment].used = 0;
 		}
-		if (diedlast == 0)
-		{
-			for (increment = 0; increment < MAXPLAYERS; increment++)
-			{
-				score[increment] = 0;
-				ShippyObjects[increment].used = 0;
-			}
-			AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
-			if (numplayers == 2)
-				AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
-			else
-				AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
-		}
-		else
+		if (diedlast != 0)
 		{
 			diedlast = 0;
 			for (increment = 0; increment < MAXPLAYERS; increment++)
@@ -1416,6 +1403,31 @@ int GetGameState()
 	return GAMESTATE_INITIALS;
 }
 
+void StartGameState()
+{
+	audio_music(DATADIR "shippy.xm");
+	gamestate = GAME;
+	operational = 0;
+	if (players[1])
+		numplayers = 2;
+	else
+		numplayers = 1;
+	gameover = 0;
+	level = 0;
+	diedlast = 0;
+	leftmonsters = 0;
+	for (int increment = 0; increment < MAXPLAYERS; increment++)
+	{
+		score[increment] = 0;
+		ShippyObjects[increment].used = 0;
+	}
+	AddObject(SHIPPY, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+	if (numplayers == 2)
+		AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_NONE, 100, NULL, 0, 0);
+	else
+		AddObject(SHIPPY2, 128, 300, 0, SHIPPY_SPECIAL_GAMEOVER, 0, NULL, 0, 0);
+};
+
 void InitShippy()
 {
 
@@ -1486,13 +1498,7 @@ void ExecShippy()
 			--shipwait;
 		if (jaction[0] || jsecond[0] || players[0] || players[1])
 		{
-			audio_music(DATADIR "shippy.xm");
-			gamestate = GAME;
-			operational = 0;
-			if (players[1])
-				numplayers = 2;
-			else
-				numplayers = 1;
+			StartGameState();
 		}
 		else if (shipwait == 0)
 		{
@@ -1630,13 +1636,7 @@ void ExecShippy()
 				}
 				else
 				{
-					audio_music(DATADIR "shippy.xm");
-					gamestate = GAME;
-					operational = 0;
-					if (players[1])
-						numplayers = 2;
-					else
-						numplayers = 1;
+					StartGameState();
 				}
 			}
 			if (shipwait == 0)
