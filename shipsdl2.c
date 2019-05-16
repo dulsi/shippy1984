@@ -333,8 +333,6 @@ void SYSTEM_POLLINPUT()
 
 	if (key[SHIPPY_ESCAPE])
 		done = 1;
-/*    if(key[SHIPPY_RETURN] && key[SHIPPY_LALT])
-        SDL_WM_ToggleFullScreen(screen);*/
 
 	if (waitforkey[0] > 0)
 	{

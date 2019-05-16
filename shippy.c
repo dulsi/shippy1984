@@ -257,8 +257,15 @@ void DrawOverlay()
 		break;
 	case TITLE:
 		PrintMessage("SHIPPY 1984!", 56, 16, TEXT_YELLOW);
-		PrintMessage("PRESS BUTTON 1 TO START", 24, 24, TEXT_WHITE);
-		PrintMessage("PRESS CTRL TO START", 24, 32, TEXT_WHITE);
+		if (use_arcade_mode)
+		{
+			PrintMessage("PRESS 1P OR 2P TO START", 24, 24, TEXT_WHITE);
+		}
+		else
+		{
+			PrintMessage("PRESS BUTTON 1 TO START", 24, 24, TEXT_WHITE);
+			PrintMessage("PRESS CTRL TO START", 24, 32, TEXT_WHITE);
+		}
 		SYSTEM_BLIT(32, 64, 32, 48, 16, 16);
 		PrintMessage(" 100 POINTS PLUS BONUS", 56, 48, TEXT_CYAN);
 		SYSTEM_BLIT(48, 64, 32, 64, 16, 16);
@@ -390,8 +397,11 @@ void NewGame(int mlevel)
 			AddObject(ENEMYSHIPPY, 8 + ((increment % 15) * 16), 16 + ((increment / 15) * 32), 1, 50 + rand() % 100, 10, NULL, 0, 0);
 		}
 		leftmonsters = 15;
-		AddObject(MESSAGE, 0, 96, 300, 300, 0, "PRESS BUTTON 1 TO FIRE GUNS!", 0, 0);
-		AddObject(MESSAGE, 0, 88, 300, 300, 0, "PRESS CTRL TO FIRE GUNS!", 0, 0);
+		if (use_arcade_mode == 0)
+		{
+			AddObject(MESSAGE, 0, 96, 300, 300, 0, "PRESS BUTTON 1 TO FIRE GUNS!", 0, 0);
+			AddObject(MESSAGE, 0, 88, 300, 300, 0, "PRESS CTRL TO FIRE GUNS!", 0, 0);
+		}
 		AddObject(MESSAGE, 0, 80, 300, 300, 0, "READY", 0, 0);
 		AddObject(MESSAGE, 0, 80, 180, 480, 0, "GO!", 0, 0);
 		for (int i = 0; i < MAXPLAYERS; i++)
@@ -1491,7 +1501,10 @@ void ExecShippy()
 		}
 		if (waitforkey[0] == 0)
 		{
-			PrintMessage("PRESS CTRL OR BUTTON 1", 32, 98, TEXT_WHITE);
+			if (use_arcade_mode == 1)
+				PrintMessage("PRESS 1P OR 2P", 64, 98, TEXT_WHITE);
+			else
+				PrintMessage("PRESS CTRL OR BUTTON 1", 32, 98, TEXT_WHITE);
 
 		}
 		if (shipwait > 0)
@@ -1660,11 +1673,11 @@ void ExecShippy()
 						if (winners[increment].level == -1)
 							winners[increment].level = 0;
 					}
+					StartGameState();
 					gamestate = DEMO;
 					operational = 1800;
 					powerupframe = 0;
 					shipwait = 0;
-					numplayers = 1;
 				}
 			}
 		}
@@ -1776,7 +1789,7 @@ static void show_usage(char *name, FILE * f)
 					"Usage: %s [-w] [-a] [-h]\n\n"
 					"Options:\n"
 					"-w\tWindowed, start in a window (default fullscreen)\n"
-					"-a\tArcade, use an arcade-ish video mode with scanlines (CRT only!)\n" "-h\tHelp, display this help and exit\n", name);
+					"-a\tArcade mode\n" "-h\tHelp, display this help and exit\n", name);
 }
 
 int SHIPPY_MAIN(int argc, char *argv[])
