@@ -11,6 +11,9 @@ Music is copyright neoblaze 2004.
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <time.h>
 #include "shippy.h"
 
@@ -1792,19 +1795,54 @@ static void show_usage(char *name, FILE * f)
 					"-a\tArcade mode\n" "-h\tHelp, display this help and exit\n", name);
 }
 
+char *savePath[3] = {".local", "share", "shippy"};
+
 int SHIPPY_MAIN(int argc, char *argv[])
 {
 	int i;
 #ifdef __unix__
-	gid_t realgid;
-
-	highscore_fp = fopen("/var/lib/games/shippy.hs", "r+");
-
-	realgid = getgid();
-	if (setresgid(-1, realgid, realgid) != 0)
+	char *home = getenv("HOME");
+	char *saveName = NULL;
+	if (home)
 	{
-		perror("Could not drop setgid privileges.  Aborting.");
-		return 1;
+		int len = strlen(home);
+		saveName = (char *)malloc(len + 100);
+		strcpy(saveName, home);
+		if (saveName[len - 1] != '/')
+		{
+			strcat(saveName, "/");
+		}
+		for (i = 0; i < 3; i++)
+		{
+			strcat(saveName, savePath[i]);
+			int err = mkdir(saveName, 0700);
+			if ((-1 == err) && (EEXIST != errno))
+			{
+				fprintf(stderr, "Error creating directory %s\n", saveName);
+				exit(2);
+			}
+			strcat(saveName, "/");
+		}
+	}
+	else
+	{
+		saveName = (char *)malloc(100);
+		saveName[0] = 0;
+	}
+	strcat(saveName, "shippy.hs");
+
+	highscore_fp = fopen(saveName, "r+");
+	if (highscore_fp == NULL)
+	{
+		highscore_fp = fopen("/usr/share/shippy/shippy.hs", "r");
+		RestoreHS();
+		if (highscore_fp != NULL)
+		{
+			fclose(highscore_fp);
+		}
+		highscore_fp = fopen(saveName, "w+");
+		StoreHS();
+		rewind(highscore_fp);
 	}
 #else
 	highscore_fp = fopen("data/scores.lst", "r+b");
