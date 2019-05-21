@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
@@ -29,6 +30,7 @@ SDL_Texture *BackBuffer = NULL;
 SDL_Texture *Graphics = NULL;
 SDL_Joystick *Joystick = NULL;
 Uint8 key[1337];
+static bool fullscreen = true;
 
 SDL_Rect src;
 SDL_Rect dest;
@@ -213,7 +215,10 @@ void SYSTEM_SETVID()
 {
 	Uint32 flags = SDL_WINDOW_FULLSCREEN;
 	if (start_windowed)
+	{
 		flags &= ~SDL_WINDOW_FULLSCREEN;
+		fullscreen = false;
+	}
 	screen = SDL_CreateWindow("Shippy1984 by Ryan Broomfield SDL2 VERSION", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, screen_height, flags);
 	SDL_ShowCursor(SDL_DISABLE);
 	renderer = SDL_CreateRenderer(screen, -1, 0);
@@ -481,6 +486,11 @@ void SYSTEM_IDLE()
 			{
 				key[keyIndx] = 0;
 			}
+		}
+		if ((event.type == SDL_KEYDOWN) && key[SHIPPY_LALT] && (event.key.keysym.sym == SDLK_RETURN) && (!use_arcade_mode))
+		{
+			fullscreen = !fullscreen;
+			SDL_SetWindowFullscreen(screen, fullscreen ? SDL_WINDOW_FULLSCREEN : 0);
 		}
 	}
 
