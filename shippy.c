@@ -10,6 +10,7 @@ Music is copyright neoblaze 2004.
 #endif
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -1288,13 +1289,24 @@ void DoAi(int number)
 
 void StoreHS()
 {
-	size_t silence_warnings;
+	int i;
+	size_t writeSize, writeActual;
 
 	if (highscore_fp == NULL)
 		return;
 
 	rewind(highscore_fp);
-	silence_warnings = fwrite(winners, sizeof(struct HISCORE), 14, highscore_fp);
+	char data[1024];
+	for (i = 0; i < 14; i++)
+	{
+		writeSize = snprintf(data, 1024, "%-3s %10d %10d\n", winners[i].name, winners[i].level, winners[i].score);
+		writeActual = fwrite(data, 1, writeSize, highscore_fp);
+		if (writeSize != writeActual)
+		{
+			printf("Error: Failed to write high scores\n");
+			break;
+		}
+	}
 }
 
 void RestoreHS()
@@ -1303,11 +1315,37 @@ void RestoreHS()
 
 	if (highscore_fp != NULL)
 	{
-		if (fread(winners, sizeof(struct HISCORE), 14, highscore_fp) == 14)
+		char data[1024];
+		size_t readSize = fread(data, 1, 1024, highscore_fp);
+		if (readSize == sizeof(struct HISCORE) * 14)
 		{
+			memcpy(winners, data, sizeof(struct HISCORE) * 14);
 			highscore = winners[0].score;
 			return;
 		}
+		int where = 0;
+		bool success = true;
+		for (i = 0; i < 14; i++)
+		{
+			if (readSize < where + 26)
+			{
+				printf("Error: Failed to read high scores\n");
+				success = false;
+				break;
+			}
+			memcpy(winners[i].name, data + where, 3);
+			winners[i].name[3] = 0;
+			where += 4;
+			winners[i].level = atol(data + where);
+			where += 11;
+			winners[i].score = atol(data + where);
+			where += 11;
+			while ((where < readSize) && ((data[where] == '\n') || (data[where] == '\r')))
+				where++;
+			winners[i].last = 0;
+		}
+		if (success)
+			return;
 	}
 
 	strcpy(winners[0].name, "RAB");
@@ -1647,7 +1685,7 @@ void ExecShippy()
 					level = 0;
 					gameover = 0;
 					operational = 0;
-					waitforkey[0] = waitforkey[0] = 30;
+					waitforkey[0] = waitforkey[1] = 30;
 					return;
 				}
 				else
