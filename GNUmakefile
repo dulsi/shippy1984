@@ -3,6 +3,7 @@
 
 ALLEGRO  = 0
 SDL = 0
+GAMERZILLA = 1
 ifeq ($(ALLEGRO),1)
 SDL      = 0
 SDL2      = 0
@@ -38,6 +39,10 @@ SRCS    += shipall.c
 CFLAGS  += -DUSE_ALLEGRO
 LDFLAGS  = -laldmb -ldumb `allegro-config --libs`
 endif
+endif
+ifeq ($(GAMERZILLA), 1)
+CFLAGS  += -DGAMERZILLA `pkg-config --cflags gamerzilla`
+LDFLAGS  += `pkg-config --libs gamerzilla`
 endif
 
 all: $(OBJS) $(EXEC)

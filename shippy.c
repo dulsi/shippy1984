@@ -55,6 +55,13 @@ Music is copyright neoblaze 2004.
 
 #define MAXPLAYERS 2
 
+#ifdef GAMERZILLA
+#include <gamerzilla.h>
+
+Gamerzilla shippyInfo;
+GamerzillaTrophy shippyTrophy[4];
+#endif
+
 struct SHIPPYINFO
 {
 	int x;
@@ -108,6 +115,8 @@ char eff[32];
 char bon[64];
 char tim[64];
 int aiwavelet[240];
+int cowardcount = 0;
+int game_id = 0;
 
 char curname[MAXPLAYERS][4];
 char currchar[MAXPLAYERS] = { 'A', 'A' };
@@ -415,6 +424,7 @@ void NewGame(int mlevel)
 		timeattack = -shipwait;
 		missedshots = 0;
 		firedshots = 0;
+		cowardcount = 0;
 
 		break;
 	default:
@@ -450,6 +460,20 @@ void NewGame(int mlevel)
 		}
 		if (mlevel > 10)
 		{
+#ifdef GAMERZILLA
+			if (mlevel == 11)
+			{
+				bool achieved;
+				if ((GamerzillaGetTrophy(game_id, "Expert Pilot", &achieved)) && (!achieved))
+					GamerzillaSetTrophy(game_id, "Expert Pilot");
+			}
+			if (mlevel == 21)
+			{
+				bool achieved;
+				if ((GamerzillaGetTrophy(game_id, "Master Pilot", &achieved)) && (!achieved))
+					GamerzillaSetTrophy(game_id, "Master Pilot");
+			}
+#endif
 			adder = mlevel - 10;
 			if (adder > 10)
 				adder = 10;
@@ -490,23 +514,40 @@ void NewGame(int mlevel)
 
 			bonus = 0;
 			sprintf(acc, "COWARD AWARD! 0 SHOTS FIRED!");
+			cowardcount++;
+#ifdef GAMERZILLA
+			if (cowardcount == 3)
+			{
+				bool achieved;
+				if ((GamerzillaGetTrophy(game_id, "Chicken", &achieved)) && (!achieved))
+					GamerzillaSetTrophy(game_id, "Chicken");
+			}
+#endif
 		}
-		else if (firedshots == missedshots)
+		else
 		{
-			bonus = 0;
-			sprintf(acc, "TRIGGERHAPPY! HIT NO ENEMIES!");
+			cowardcount = 0;
+			if (firedshots == missedshots)
+			{
+				bonus = 0;
+				sprintf(acc, "TRIGGERHAPPY! HIT NO ENEMIES!");
+			}
 
-		}
-
-		else if (firedshots >= 1 && missedshots >= 1)
-		{
-			bonus = ((firedshots * 100) / (firedshots - missedshots)) * 20;
-			sprintf(acc, "ACCURACY %i OF %i!", firedshots - missedshots, firedshots);
-		}
-		else if (firedshots >= 1 && missedshots == 0)
-		{
-			bonus = 5000;
-			sprintf(acc, "MARKSMAN 5000 POINTS");
+			else if (firedshots >= 1 && missedshots >= 1)
+			{
+				bonus = ((firedshots * 100) / (firedshots - missedshots)) * 20;
+				sprintf(acc, "ACCURACY %i OF %i!", firedshots - missedshots, firedshots);
+			}
+			else if (firedshots >= 1 && missedshots == 0)
+			{
+				bonus = 5000;
+				sprintf(acc, "MARKSMAN 5000 POINTS");
+#ifdef GAMERZILLA
+				bool achieved;
+				if ((GamerzillaGetTrophy(game_id, "Marksman", &achieved)) && (!achieved))
+					GamerzillaSetTrophy(game_id, "Marksman");
+#endif
+			}
 		}
 
 		if (timeattack >= timelimit)
@@ -1838,6 +1879,7 @@ char *savePath[3] = {".local", "share", "shippy"};
 int SHIPPY_MAIN(int argc, char *argv[])
 {
 	int i;
+	char *saveDir = NULL;
 #ifdef __unix__
 	char *home = getenv("HOME");
 	char *saveName = NULL;
@@ -1845,28 +1887,31 @@ int SHIPPY_MAIN(int argc, char *argv[])
 	{
 		int len = strlen(home);
 		saveName = (char *)malloc(len + 100);
-		strcpy(saveName, home);
-		if (saveName[len - 1] != '/')
+		saveDir = (char *)malloc(len + 100);
+		strcpy(saveDir, home);
+		if (saveDir[len - 1] != '/')
 		{
-			strcat(saveName, "/");
+			strcat(saveDir, "/");
 		}
 		for (i = 0; i < 3; i++)
 		{
-			strcat(saveName, savePath[i]);
-			int err = mkdir(saveName, 0700);
+			strcat(saveDir, savePath[i]);
+			int err = mkdir(saveDir, 0700);
 			if ((-1 == err) && (EEXIST != errno))
 			{
-				fprintf(stderr, "Error creating directory %s\n", saveName);
+				fprintf(stderr, "Error creating directory %s\n", saveDir);
 				exit(2);
 			}
-			strcat(saveName, "/");
+			strcat(saveDir, "/");
 		}
 	}
 	else
 	{
+		saveDir = (char *)malloc(100);
+		strcpy(saveDir, "data/");
 		saveName = (char *)malloc(100);
-		saveName[0] = 0;
 	}
+	strcpy(saveName, saveDir);
 	strcat(saveName, "shippy.hs");
 
 	highscore_fp = fopen(saveName, "r+");
@@ -1883,7 +1928,39 @@ int SHIPPY_MAIN(int argc, char *argv[])
 		rewind(highscore_fp);
 	}
 #else
+	saveName = strdup("data/");
 	highscore_fp = fopen("data/scores.lst", "r+b");
+#endif
+#ifdef GAMERZILLA
+	shippyInfo.name = "Shippy 1984";
+	shippyInfo.short_name = "shippy";
+	shippyInfo.image = DATADIR "gamerzilla/shippy1984.png";
+	shippyInfo.version = 1;
+	shippyInfo.numTrophy = 4;
+	shippyInfo.szTrophy = 4;
+	shippyInfo.trophy = shippyTrophy;
+	shippyTrophy[0].name = "Marksman";
+	shippyTrophy[0].desc = "Get 100% acurracy on a level.";
+	shippyTrophy[0].max_progress = 0;
+	shippyTrophy[0].true_image = DATADIR "gamerzilla/marksman1.png";
+	shippyTrophy[0].false_image = DATADIR "gamerzilla/notachieved.png";
+	shippyTrophy[1].name = "Chicken";
+	shippyTrophy[1].desc = "Do not shoot for three levels.";
+	shippyTrophy[1].max_progress = 0;
+	shippyTrophy[1].true_image = DATADIR "gamerzilla/chicken1.png";
+	shippyTrophy[1].false_image = DATADIR "gamerzilla/notachieved.png";
+	shippyTrophy[2].name = "Expert Pilot";
+	shippyTrophy[2].desc = "Defeat level 10.";
+	shippyTrophy[2].max_progress = 0;
+	shippyTrophy[2].true_image = DATADIR "gamerzilla/level10.png";
+	shippyTrophy[2].false_image = DATADIR "gamerzilla/notachieved.png";
+	shippyTrophy[3].name = "Master Pilot";
+	shippyTrophy[3].desc = "Defeat level 20.";
+	shippyTrophy[3].max_progress = 0;
+	shippyTrophy[3].true_image = DATADIR "gamerzilla/level20.png";
+	shippyTrophy[3].false_image = DATADIR "gamerzilla/notachieved.png";
+	GamerzillaInit(false, saveDir);
+	game_id = GamerzillaGameInit(&shippyInfo);
 #endif
 
 	for (i = 1; i < argc; i++)
@@ -1940,6 +2017,9 @@ int SHIPPY_MAIN(int argc, char *argv[])
 		}
 	}
 	StoreHS();
+#ifdef GAMERZILLA
+	GamerzillaQuit();
+#endif
 	SYSTEM_CLEAN();
 	return 0;
 }
