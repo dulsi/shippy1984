@@ -1932,6 +1932,7 @@ int SHIPPY_MAIN(int argc, char *argv[])
 	highscore_fp = fopen("data/scores.lst", "r+b");
 #endif
 #ifdef GAMERZILLA
+	GamerzillaInitGame(&shippyInfo);
 	shippyInfo.name = "Shippy 1984";
 	shippyInfo.short_name = "shippy";
 	shippyInfo.image = DATADIR "gamerzilla/shippy1984.png";
@@ -1959,8 +1960,8 @@ int SHIPPY_MAIN(int argc, char *argv[])
 	shippyTrophy[3].max_progress = 0;
 	shippyTrophy[3].true_image = DATADIR "gamerzilla/level20.png";
 	shippyTrophy[3].false_image = DATADIR "gamerzilla/notachieved.png";
-	GamerzillaInit(false, saveDir);
-	game_id = GamerzillaGameInit(&shippyInfo);
+	GamerzillaStart(false, saveDir);
+	game_id = GamerzillaSetGame(&shippyInfo);
 #endif
 
 	for (i = 1; i < argc; i++)
