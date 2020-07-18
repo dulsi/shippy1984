@@ -57,9 +57,6 @@ Music is copyright neoblaze 2004.
 
 #ifdef GAMERZILLA
 #include <gamerzilla.h>
-
-Gamerzilla shippyInfo;
-GamerzillaTrophy shippyTrophy[4];
 #endif
 
 struct SHIPPYINFO
@@ -1932,36 +1929,8 @@ int SHIPPY_MAIN(int argc, char *argv[])
 	highscore_fp = fopen("data/scores.lst", "r+b");
 #endif
 #ifdef GAMERZILLA
-	GamerzillaInitGame(&shippyInfo);
-	shippyInfo.name = "Shippy 1984";
-	shippyInfo.short_name = "shippy";
-	shippyInfo.image = DATADIR "gamerzilla/shippy1984.png";
-	shippyInfo.version = 1;
-	shippyInfo.numTrophy = 4;
-	shippyInfo.szTrophy = 4;
-	shippyInfo.trophy = shippyTrophy;
-	shippyTrophy[0].name = "Marksman";
-	shippyTrophy[0].desc = "Get 100% acurracy on a level.";
-	shippyTrophy[0].max_progress = 0;
-	shippyTrophy[0].true_image = DATADIR "gamerzilla/marksman1.png";
-	shippyTrophy[0].false_image = DATADIR "gamerzilla/notachieved.png";
-	shippyTrophy[1].name = "Chicken";
-	shippyTrophy[1].desc = "Do not shoot for three levels.";
-	shippyTrophy[1].max_progress = 0;
-	shippyTrophy[1].true_image = DATADIR "gamerzilla/chicken1.png";
-	shippyTrophy[1].false_image = DATADIR "gamerzilla/notachieved.png";
-	shippyTrophy[2].name = "Expert Pilot";
-	shippyTrophy[2].desc = "Defeat level 10.";
-	shippyTrophy[2].max_progress = 0;
-	shippyTrophy[2].true_image = DATADIR "gamerzilla/level10.png";
-	shippyTrophy[2].false_image = DATADIR "gamerzilla/notachieved.png";
-	shippyTrophy[3].name = "Master Pilot";
-	shippyTrophy[3].desc = "Defeat level 20.";
-	shippyTrophy[3].max_progress = 0;
-	shippyTrophy[3].true_image = DATADIR "gamerzilla/level20.png";
-	shippyTrophy[3].false_image = DATADIR "gamerzilla/notachieved.png";
 	GamerzillaStart(false, saveDir);
-	game_id = GamerzillaSetGame(&shippyInfo);
+	game_id = GamerzillaSetGameFromFile(DATADIR "gamerzilla/shippy.game", DATADIR);
 #endif
 
 	for (i = 1; i < argc; i++)
