@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Shippy 1984
+Comment=Galaxians with powerups
+Exec=shippy
+Icon=shippy
+Terminal=false
+StartupNotify=false
+Type=Application
+Categories=Game;ArcadeGame;
+Keywords=Game;Arcade;Classic;Retro;

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<component type="desktop">
+  <id>shippy.desktop</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-2.0+</project_license>
+  <name>Shippy1984</name>
+  <summary>Space invaders / Galaxians like game with powerups</summary>
+  <description>
+    <p>
+     Shippy1984 is a small game designed to bring back nostalgia for the
+     ways games used to be made--addicting as hell! Mash buttons on your
+     way to the high score!
+    </p>
+    <p>
+     Shippy1984 is designed from the ground up for the avid casual
+     gamer who feels left behind by the technological overload of today's games!
+     No longer! Shippy1984 is the game you have been waiting for!
+    </p>
+  </description>
+  <url type="homepage">http://www.identicalsoftware.com/shippy1984</url>
+  <screenshots>
+    <screenshot type="default">http://www.identicalsoftware.com/shippy1984/shot2.gif</screenshot>
+    <screenshot>http://www.identicalsoftware.com/shippy1984/shot.gif</screenshot>
+  </screenshots>
+  <updatecontact>jwrdegoede_at_fedoraproject.org</updatecontact>
+  <content_rating type="oars-1.1">
+    <content_attribute id="violence-cartoon">moderate</content_attribute>
+  </content_rating>
+</component>
