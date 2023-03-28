@@ -1,4 +1,0 @@
-* KTHX to DRUPPY for a GNU makefile and yelling at me for style points :P
-* KTHX to logiclrd for making a new, faster SYSTEM_FINISHRENDER in shipsdl.c
-* KTHX to entheh for DUMB for the allegro port (http://dumb.sf.net)
-* KTHX to samh for modifying the makefile to build allegro or SDL from make.
