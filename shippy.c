@@ -126,8 +126,8 @@ FILE *highscore_fp;
 
 int start_windowed = 0;
 int use_arcade_mode = 0;
-int screen_width = 720;
-int screen_height = 480;
+int screen_width = 960;
+int screen_height = 640;
 
 int compare(const void *a, const void *b)
 {

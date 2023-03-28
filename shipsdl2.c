@@ -31,6 +31,8 @@ SDL_Texture *Graphics = NULL;
 SDL_Joystick *Joystick = NULL;
 Uint8 key[1337];
 static bool fullscreen = true;
+static int modes[2][3] = { {240, 160, 1}, {480, 320, 2} };
+static int mode = 1;
 
 SDL_Rect src;
 SDL_Rect dest;
@@ -199,7 +201,6 @@ void End_Audio()
 }
 
 int done = 0;
-int gscale = 1;
 
 void SYSTEM_CLEANBMP()
 {
@@ -213,16 +214,16 @@ void SYSTEM_CLEANBMP()
 
 void SYSTEM_SETVID()
 {
-	Uint32 flags = SDL_WINDOW_FULLSCREEN;
+	Uint32 flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
 	if (start_windowed)
 	{
-		flags &= ~SDL_WINDOW_FULLSCREEN;
+		flags &= ~SDL_WINDOW_FULLSCREEN_DESKTOP;
 		fullscreen = false;
 	}
 	screen = SDL_CreateWindow("Shippy1984 by Ryan Broomfield SDL2 VERSION", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, screen_height, flags);
 	SDL_ShowCursor(SDL_DISABLE);
 	renderer = SDL_CreateRenderer(screen, -1, 0);
-	SDL_RenderSetLogicalSize(renderer, 240, 160);
+	SDL_RenderSetLogicalSize(renderer, modes[mode][0], modes[mode][1]);
 
 	if (screen == NULL)
 	{
@@ -231,8 +232,16 @@ void SYSTEM_SETVID()
 
 	SYSTEM_CLEANBMP();
 
-	Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp", 0);
-	BackBuffer = CreateSurfaceFromBitmap(DATADIR "splash.bmp", 0);
+	if (mode == 0)
+	{
+		Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp", 0);
+		BackBuffer = CreateSurfaceFromBitmap(DATADIR "splash.bmp", 0);
+	}
+	else
+	{
+		Graphics = CreateSurfaceFromBitmap(DATADIR "graphics2.bmp", 0);
+		BackBuffer = CreateSurfaceFromBitmap(DATADIR "splash2.bmp", 0);
+	}
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);
 }
@@ -284,12 +293,12 @@ void SYSTEM_DRAW_BG(char *bmp)
 	SYSTEM_CLEARSCREEN();
 	src.x = 0;
 	src.y = 0;
-	src.w = 240;
-	src.h = 160;
+	src.w = modes[mode][0];
+	src.h = modes[mode][1];
 	dest.x = 0;
 	dest.y = 0;
-	dest.w = 240;
-	dest.h = 160;
+	dest.w = modes[mode][0];
+	dest.h = modes[mode][1];
 	if (SDL_RenderCopy(renderer, BackBuffer, &src, &dest) != 0)
 	{
 		printf("SYSTEM_BLIT ERROR! \n");
@@ -311,14 +320,14 @@ int SYSTEM_CLEARSCREEN()
 
 void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 {
-	src.x = sx;
-	src.y = sy;
-	src.w = szx;
-	src.h = szy;
-	dest.x = x;
-	dest.y = y;
-	dest.w = szx;
-	dest.h = szy;
+	src.x = sx * modes[mode][2];
+	src.y = sy * modes[mode][2];
+	src.w = szx * modes[mode][2];
+	src.h = szy * modes[mode][2];
+	dest.x = x * modes[mode][2];
+	dest.y = y * modes[mode][2];
+	dest.w = szx * modes[mode][2];
+	dest.h = szy * modes[mode][2];
 	if (SDL_RenderCopy(renderer, Graphics, &src, &dest) != 0)
 	{
 		printf("SYSTEM_BLIT ERROR! \n");
