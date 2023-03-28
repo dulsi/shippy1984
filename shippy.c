@@ -202,11 +202,11 @@ void DrawOverlay()
 
 		for (increment = 0; increment < ShippyObjects[0].lives; ++increment)
 		{
-			SYSTEM_BLIT(0, 64, increment * 16, 144, 16, 16);
+			SYSTEM_BLIT(0, 48, increment * 16, 144, 16, 16);
 		}
 		for (increment = 0; increment < ShippyObjects[1].lives; ++increment)
 		{
-			SYSTEM_BLIT(16, 64, 224 - (increment * 16), 144, 16, 16);
+			SYSTEM_BLIT(16, 48, 224 - (increment * 16), 144, 16, 16);
 		}
 
 		sprintf(buf, "%i", score[0]);
@@ -276,11 +276,11 @@ void DrawOverlay()
 			PrintMessage("PRESS BUTTON 1 TO START", 24, 24, TEXT_WHITE);
 			PrintMessage("PRESS CTRL TO START", 24, 32, TEXT_WHITE);
 		}
-		SYSTEM_BLIT(32, 64, 32, 48, 16, 16);
+		SYSTEM_BLIT(32, 48, 32, 48, 16, 16);
 		PrintMessage(" 100 POINTS PLUS BONUS", 56, 48, TEXT_CYAN);
-		SYSTEM_BLIT(48, 64, 32, 64, 16, 16);
+		SYSTEM_BLIT(48, 48, 32, 64, 16, 16);
 		PrintMessage(" 500 POINTS PLUS BONUS", 56, 64, TEXT_CYAN);
-		SYSTEM_BLIT(64, 64, 32, 80, 16, 16);
+		SYSTEM_BLIT(64, 48, 32, 80, 16, 16);
 		PrintMessage("2000 POINTS PLUS BONUS", 56, 80, TEXT_CYAN);
 		PrintMessage("    ARE DANGEROUS", 40, 128, TEXT_WHITE);
 		SYSTEM_BLIT(0, 88, 40, 128, 24, 8);
@@ -293,9 +293,9 @@ void DrawOverlay()
 		for (increment = 0; increment < MAXSCORE - 1; ++increment)
 		{
 			if (winners[increment].last == 1)
-				SYSTEM_BLIT(0, 64, 32, 36 + (8 * increment), 16, 16);
+				SYSTEM_BLIT(0, 48, 32, 36 + (8 * increment), 16, 16);
 			if (winners[increment].last == 2)
-				SYSTEM_BLIT(16, 64, 32, 36 + (8 * increment), 16, 16);
+				SYSTEM_BLIT(16, 48, 32, 36 + (8 * increment), 16, 16);
 			sprintf(buf, "%i", winners[increment].score);
 			test = strlen(buf);
 			PrintMessage(buf, 192 - (test * 8), 40 + (8 * increment), TEXT_WHITE);
@@ -599,24 +599,24 @@ void RenderShippy(int objnumber)
 	case SHIPPY:
 		if (ShippyObjects[objnumber].health > 0)
 		{
-			SYSTEM_BLIT(0, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+			SYSTEM_BLIT(0, 48, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 		}
 		break;
 	case SHIPPY2:
 		if (ShippyObjects[objnumber].health > 0)
 		{
-			SYSTEM_BLIT(16, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+			SYSTEM_BLIT(16, 48, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 		}
 		break;
 	case ENEMYSHIPPY:
-		SYSTEM_BLIT(32, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+		SYSTEM_BLIT(32, 48, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 
 		break;
 	case ANGRYFEZ:
-		SYSTEM_BLIT(64, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+		SYSTEM_BLIT(64, 48, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 		break;
 	case ENEMYHEART:
-		SYSTEM_BLIT(48, 64, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
+		SYSTEM_BLIT(48, 48, ShippyObjects[objnumber].x - 8, ShippyObjects[objnumber].y - 8, 16, 16);
 		break;
 	case EXPLOSION:
 		if (ShippyObjects[objnumber].special <= 31)
@@ -1925,7 +1925,6 @@ int SHIPPY_MAIN(int argc, char *argv[])
 		rewind(highscore_fp);
 	}
 #else
-	saveName = strdup("data/");
 	highscore_fp = fopen("data/scores.lst", "r+b");
 #endif
 #ifdef GAMERZILLA

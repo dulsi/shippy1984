@@ -28,12 +28,12 @@ EXEC     = shippy
 ifeq ($(SDL2),1)
 SRCS    += shipsdl2.c
 CFLAGS  += -DUSE_SDL
-LDFLAGS  = `sdl2-config --libs` -lSDL2_mixer
+LDFLAGS  = `pkg-config --libs sdl2 SDL2_mixer`
 else
 ifeq ($(SDL),1)
 SRCS    += shipsdl.c
 CFLAGS  += -DUSE_SDL
-LDFLAGS  = `sdl-config --libs` -lSDL_mixer
+LDFLAGS  = `pkg-config --libs sdl SDL_mixer`
 else
 SRCS    += shipall.c
 CFLAGS  += -DUSE_ALLEGRO
