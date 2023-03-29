@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 #include "shippy.h"
+#include "path.h"
 
 #define SHIPPY_LEFT 0
 #define SHIPPY_RIGHT 1
@@ -50,10 +51,12 @@ Uint32 timing;
 #define MAX_SAMPLES 8
 SDL_Texture *CreateSurfaceFromBitmap(char *bmpfile, Uint32 flags)
 {
-
 	SDL_Surface *junktemp;
+	char fname[1024];
+	strcpy(fname, get_data_path());
+	strcat(fname, bmpfile);
 
-	junktemp = SDL_LoadBMP(bmpfile);
+	junktemp = SDL_LoadBMP(fname);
 
 	SDL_SetColorKey(junktemp, SDL_TRUE, SDL_MapRGB(junktemp->format, 255, 0, 255));
 	SDL_Texture *sdlTexture = SDL_CreateTextureFromSurface(renderer, junktemp);
@@ -111,7 +114,10 @@ void audio_play(char *wav)
 	{
 		if (samples[i].istaken == 0)
 		{
-			samples[i].sample = Mix_LoadWAV(wav);
+			char fname[1024];
+			strcpy(fname, get_data_path());
+			strcat(fname, wav);
+			samples[i].sample = Mix_LoadWAV(fname);
 			strcpy(samples[i].samplename, wav);
 			samples[i].voice = Mix_PlayChannel(-1, samples[i].sample, 0);
 			samples[i].loaded = 1;
@@ -135,7 +141,10 @@ void audio_music(char *mfile)
 	}
 	if (mfile != NULL)
 	{
-		music = Mix_LoadMUS(mfile);
+		char fname[1024];
+		strcpy(fname, get_data_path());
+		strcat(fname, mfile);
+		music = Mix_LoadMUS(fname);
 		if (!music)
 		{
 			printf("Mix_LoadMUS(%s): %s\n", mfile, Mix_GetError());
@@ -234,13 +243,13 @@ void SYSTEM_SETVID()
 
 	if (mode == 0)
 	{
-		Graphics = CreateSurfaceFromBitmap(DATADIR "graphics.bmp", 0);
-		BackBuffer = CreateSurfaceFromBitmap(DATADIR "splash.bmp", 0);
+		Graphics = CreateSurfaceFromBitmap("graphics.bmp", 0);
+		BackBuffer = CreateSurfaceFromBitmap("splash.bmp", 0);
 	}
 	else
 	{
-		Graphics = CreateSurfaceFromBitmap(DATADIR "graphics2.bmp", 0);
-		BackBuffer = CreateSurfaceFromBitmap(DATADIR "splash2.bmp", 0);
+		Graphics = CreateSurfaceFromBitmap("graphics2.bmp", 0);
+		BackBuffer = CreateSurfaceFromBitmap("splash2.bmp", 0);
 	}
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderClear(renderer);

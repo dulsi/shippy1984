@@ -8,7 +8,7 @@ CC       = gcc
 RM       = /bin/rm
 CFLAGS   = -O3
 LDFLAGS  =
-SRCS     = shippy.c
+SRCS     = shippy.c path.c
 OBJS     = $(patsubst %.c, %.o, $(SRCS))
 EXEC     = shippy
 
