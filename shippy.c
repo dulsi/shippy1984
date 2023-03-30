@@ -1345,6 +1345,7 @@ void StoreHS()
 			break;
 		}
 	}
+	fflush(highscore_fp);
 }
 
 void RestoreHS()
@@ -1876,57 +1877,27 @@ char *savePath[3] = {".local", "share", "shippy"};
 int SHIPPY_MAIN(int argc, char *argv[])
 {
 	int i;
-	char *saveDir = NULL;
-#ifdef __unix__
-	char *home = getenv("HOME");
+	char *saveDir = get_user_path();
 	char *saveName = NULL;
-	if (home)
-	{
-		int len = strlen(home);
-		saveName = (char *)malloc(len + 100);
-		saveDir = (char *)malloc(len + 100);
-		strcpy(saveDir, home);
-		if (saveDir[len - 1] != '/')
-		{
-			strcat(saveDir, "/");
-		}
-		for (i = 0; i < 3; i++)
-		{
-			strcat(saveDir, savePath[i]);
-			int err = mkdir(saveDir, 0700);
-			if ((-1 == err) && (EEXIST != errno))
-			{
-				fprintf(stderr, "Error creating directory %s\n", saveDir);
-				exit(2);
-			}
-			strcat(saveDir, "/");
-		}
-	}
-	else
-	{
-		saveDir = (char *)malloc(100);
-		strcpy(saveDir, "data/");
-		saveName = (char *)malloc(100);
-	}
+	int len = strlen(saveDir);
+	saveName = (char *)malloc(len + 100);
 	strcpy(saveName, saveDir);
 	strcat(saveName, "shippy.hs");
-
 	highscore_fp = fopen(saveName, "r+");
+#ifdef __unix__
 	if (highscore_fp == NULL)
 	{
-		highscore_fp = fopen("/usr/share/shippy/shippy.hs", "r");
-		RestoreHS();
-		if (highscore_fp != NULL)
-		{
-			fclose(highscore_fp);
-		}
-		highscore_fp = fopen(saveName, "w+");
-		StoreHS();
-		rewind(highscore_fp);
+			highscore_fp = fopen("/usr/share/shippy/shippy.hs", "r");
 	}
-#else
-	highscore_fp = fopen("data/scores.lst", "r+");
 #endif
+	RestoreHS();
+	if (highscore_fp != NULL)
+	{
+			fclose(highscore_fp);
+	}
+	highscore_fp = fopen(saveName, "w+");
+	StoreHS();
+	rewind(highscore_fp);
 #ifdef GAMERZILLA
 	GamerzillaStart(false, saveDir);
 	{
