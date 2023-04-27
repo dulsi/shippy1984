@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_ttf.h>
 #include "shippy.h"
 #include "path.h"
+#include "font.h"
 
 #define SHIPPY_LEFT 0
 #define SHIPPY_RIGHT 1
@@ -33,7 +35,7 @@ SDL_Joystick *Joystick = NULL;
 Uint8 key[1337];
 static bool fullscreen = true;
 static int modes[2][3] = { {240, 160, 1}, {480, 320, 2} };
-static int mode = 1;
+static unsigned int frame = 0;
 
 SDL_Rect src;
 SDL_Rect dest;
@@ -44,9 +46,22 @@ int jaction[2] = { 0, 0 };
 int jsecond[2] = { 0, 0 };
 int waitforkey[2] = { 360, 360 };
 int players[2] = { 0, 0 };
+int mode = -1;
 
 volatile int objectsynch = 0;
 Uint32 timing;
+
+TTF_Font *font;
+
+typedef struct fontcache_s {
+	int w, h;
+	SDL_Texture *tex;
+	const char *msg;
+	int used;
+} fontcache;
+
+#define MAX_FONTCACHE 20
+fontcache textcache[MAX_FONTCACHE];
 
 #define MAX_SAMPLES 8
 SDL_Texture *CreateSurfaceFromBitmap(char *bmpfile, Uint32 flags)
@@ -147,10 +162,16 @@ void audio_music(char *mfile)
 		music = Mix_LoadMUS(fname);
 		if (!music)
 		{
-			printf("Mix_LoadMUS(%s): %s\n", mfile, Mix_GetError());
-			audio_op = 0;
+			// Cross compiled SDL2_mixer doesn't support .xm
+			strcpy(fname + strlen(fname) - 2, "ogg");
+			music = Mix_LoadMUS(fname);
+			if (!music)
+			{
+				printf("Mix_LoadMUS(%s): %s\n", mfile, Mix_GetError());
+				audio_op = 0;
+			}
 		}
-		else if (Mix_PlayMusic(music, -1) == -1)
+		if ((music) && (Mix_PlayMusic(music, -1) == -1))
 		{
 			printf("Mix_PlayMusic: %s\n", Mix_GetError());
 		}
@@ -232,27 +253,35 @@ void SYSTEM_SETVID()
 	screen = SDL_CreateWindow("Shippy1984 by Ryan Broomfield SDL2 VERSION", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, screen_height, flags);
 	SDL_ShowCursor(SDL_DISABLE);
 	renderer = SDL_CreateRenderer(screen, -1, 0);
-	SDL_RenderSetLogicalSize(renderer, modes[mode][0], modes[mode][1]);
 
 	if (screen == NULL)
 	{
 		return;
 	}
+	SYSTEM_SETMODE(1);
+}
 
-	SYSTEM_CLEANBMP();
+void SYSTEM_SETMODE(int num)
+{
+	if (mode != num)
+	{
+		mode = num;
+		SYSTEM_CLEANBMP();
+		if (mode == 0)
+		{
+			Graphics = CreateSurfaceFromBitmap("graphics.bmp", 0);
+			BackBuffer = CreateSurfaceFromBitmap("splash.bmp", 0);
+		}
+		else
+		{
+			Graphics = CreateSurfaceFromBitmap("graphics2.bmp", 0);
+			BackBuffer = CreateSurfaceFromBitmap("splash2.bmp", 0);
+		}
+		SDL_RenderSetLogicalSize(renderer, modes[mode][0], modes[mode][1]);
 
-	if (mode == 0)
-	{
-		Graphics = CreateSurfaceFromBitmap("graphics.bmp", 0);
-		BackBuffer = CreateSurfaceFromBitmap("splash.bmp", 0);
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		SDL_RenderClear(renderer);
 	}
-	else
-	{
-		Graphics = CreateSurfaceFromBitmap("graphics2.bmp", 0);
-		BackBuffer = CreateSurfaceFromBitmap("splash2.bmp", 0);
-	}
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderClear(renderer);
 }
 
 int SYSTEM_INIT()
@@ -264,12 +293,23 @@ int SYSTEM_INIT()
 	}
 	timing = SDL_GetTicks();
 
+	if (TTF_Init() == -1)
+	{
+		return 1;
+	}
+
 	atexit(SDL_Quit);
 	SYSTEM_SETVID();
 
 	audio_start();
 
 	Joystick = SDL_JoystickOpen(0);
+
+	font = GetDefaultFont(get_data_path());
+	for (int i = 0; i < MAX_FONTCACHE; i++)
+	{
+		textcache[i].used = 0;
+	}
 
 	return 0;
 }
@@ -317,7 +357,18 @@ void SYSTEM_DRAW_BG(char *bmp)
 /* NEW SYSTEM_FINISHRENDER() BY JONATHAN GILBERT 1-28-2004 */
 void SYSTEM_FINISHRENDER()
 {
+	for (int i = 0; i < MAX_FONTCACHE; i++)
+	{
+		if (textcache[i].used == 2)
+			textcache[i].used = 1;
+		else if (textcache[i].used == 1)
+		{
+			SDL_DestroyTexture(textcache[i].tex);
+			textcache[i].used = 0;
+		}
+	}
 	SDL_RenderPresent(renderer);
+	frame = frame + 1;
 }
 
 int SYSTEM_CLEARSCREEN()
@@ -329,6 +380,21 @@ int SYSTEM_CLEARSCREEN()
 
 void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 {
+	if (sy == 48)
+	{
+		if (sx == 48 || sx == 64)
+		{
+			int mult = ((frame % (6 * 12)) / 12);
+			if (mult > 3)
+				mult = 6 - mult;
+			sx += 80 * mult;
+		}
+		else if (sx == 32)
+		{
+			int mult = ((frame % (4 * 12)) / 12);
+			sx += 80 * mult;
+		}
+	}
 	src.x = sx * modes[mode][2];
 	src.y = sy * modes[mode][2];
 	src.w = szx * modes[mode][2];
@@ -342,6 +408,66 @@ void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 		printf("SYSTEM_BLIT ERROR! \n");
 	}
 
+}
+
+void SYSTEM_COMICBUBLE(int dir, int y, const char *msg)
+{
+	SDL_Rect dest, src;
+	int available = -1;
+	int use = -1;
+	for (int i = 0; i < MAX_FONTCACHE; i++)
+	{
+		if (textcache[i].used == 0)
+		{
+			if (available == -1)
+				available = i;
+			continue;
+		}
+		if (textcache[i].msg == msg)
+		{
+			use = i;
+			break;
+		}
+	}
+	if (use == -1)
+	{
+		use = available;
+		textcache[use].msg = msg;
+		SDL_Color c;
+		c.r = 0;
+		c.g = 0;
+		c.b = 0;
+		c.a = 255;
+		SDL_Surface *img = TTF_RenderUTF8_Solid(font, msg, c);
+		textcache[use].tex = SDL_CreateTextureFromSurface(renderer, img);
+		textcache[use].w = img->w;
+		textcache[use].h = img->h;
+		SDL_FreeSurface(img);
+	}
+	textcache[use].used = 2;
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+	dest.w = textcache[use].w + (textcache[use].w % 2);
+	if (dir == 1)
+		dest.x = (58 + 116) * modes[mode][2] - dest.w;
+	else
+		dest.x = 58 * modes[mode][2];
+	dest.y = y * modes[mode][2];
+	dest.h = 20;
+	SDL_RenderFillRect(renderer, &dest);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	SYSTEM_BLIT(128, 64 + dir * 32, (dest.x / modes[mode][2]) - 8, y, 8, 16);
+	SYSTEM_BLIT(128, 80 + dir * 32, (dest.x + dest.w - 1) / modes[mode][2], y, 8, 16);
+	src.x = 0;
+	src.y = 0;
+	src.w = textcache[use].w;
+	src.h = textcache[use].h;
+	dest.y = (y + 1) * modes[mode][2];
+	dest.w = textcache[use].w;
+	dest.h = textcache[use].h;
+	if (SDL_RenderCopy(renderer, textcache[use].tex, &src, &dest) != 0)
+	{
+		printf("SYSTEM_BLIT ERROR! \n");
+	}
 }
 
 void SYSTEM_POLLINPUT()

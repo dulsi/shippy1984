@@ -41,6 +41,7 @@ Music is copyright neoblaze 2004.
 #define MESSAGE 14
 #define ANGRYFEZ 15
 #define FEZBOMB 16
+#define CUTSCENE 17
 #define SPLASH -1
 #define TITLE 1
 #define DEMO 2
@@ -95,7 +96,6 @@ int diedlast = 0;
 int fps = 0;
 int frames = 0;
 int countframes = 0;
-int BELATED = 0;
 int gamestate = SPLASH;
 int powerup = 0;
 int powerupframe = 0;
@@ -129,6 +129,21 @@ int start_windowed = 0;
 int use_arcade_mode = 0;
 int screen_width = 960;
 int screen_height = 640;
+
+typedef struct cutscenepart_s {
+	int who;
+	char *message;
+} cutscenepart;
+
+typedef struct cutscene_s {
+	int num;
+	cutscenepart *parts;
+} cutscene;
+
+int numcutscenes;
+cutscene *cutscenes;
+int numdeathscenes;
+cutscene *deathscenes;
 
 int compare(const void *a, const void *b)
 {
@@ -183,12 +198,6 @@ void DrawOverlay()
 	char buf[64];
 	int test;
 
-	if (BELATED == 1)
-	{
-		PrintMessage("GAME BELATED!", 56, 56, TEXT_YELLOW);
-		PrintMessage("PRESS BUTTON 2 TO UNBELATE!", 8, 64, TEXT_WHITE);
-		PrintMessage("PRESS BACKSPACE TO UNBELATE!", 8, 72, TEXT_WHITE);
-	}
 	switch (gamestate)
 	{
 	case DEMO:
@@ -354,7 +363,9 @@ void NewGame(int mlevel)
 	int increment;
 	int adder;
 	int bonus;
+	cutscene *currentscene;
 
+	currentscene = NULL;
 	for (increment = 0; increment < MAXPLAYERS; ++increment)
 		shots[increment] = 0;
 	powerupframe = 0;
@@ -397,8 +408,15 @@ void NewGame(int mlevel)
 					ShippyObjects[increment].health = 10;
 				}
 			}
+			if ((mode > 0) && (numdeathscenes > 0))
+				currentscene = &deathscenes[rand() % numdeathscenes];
 		}
-		AddObject(LEVELMESSAGE, 0, 0, mlevel, 180, 0, NULL, 0, 0);
+		else if ((mode > 0) && (mlevel <= numcutscenes))
+		{
+			currentscene = &cutscenes[mlevel - 1];
+		}
+		if (currentscene == NULL)
+			AddObject(LEVELMESSAGE, 0, 0, mlevel, 180, 0, NULL, 0, 0);
 		for (increment = 0; increment < 20; ++increment)
 		{
 			AddObject(STAR, rand() % 232 + 8, rand() % 152 + 8, rand() % 200 + 40, rand() % 4 + 2, 100, NULL, 0, 0);
@@ -408,13 +426,25 @@ void NewGame(int mlevel)
 			AddObject(ENEMYSHIPPY, 8 + ((increment % 15) * 16), 16 + ((increment / 15) * 32), 1, 50 + rand() % 100, 10, NULL, 0, 0);
 		}
 		leftmonsters = 15;
-		if (use_arcade_mode == 0)
+		if (currentscene != NULL)
 		{
-			AddObject(MESSAGE, 0, 96, 300, 300, 0, "PRESS BUTTON 1 TO FIRE GUNS!", 0, 0);
-			AddObject(MESSAGE, 0, 88, 300, 300, 0, "PRESS CTRL TO FIRE GUNS!", 0, 0);
+			increment = 100;
+			for (int i = 0; i < currentscene->num; i++)
+			{
+				AddObject(CUTSCENE, 0, 103, 400 - increment, 300, currentscene->parts[i].who, currentscene->parts[i].message, 0, 0);
+				increment += 100;
+			}
 		}
-		AddObject(MESSAGE, 0, 80, 300, 300, 0, "READY", 0, 0);
-		AddObject(MESSAGE, 0, 80, 180, 480, 0, "GO!", 0, 0);
+		else
+		{
+			if (use_arcade_mode == 0)
+			{
+				AddObject(MESSAGE, 0, 96, 300, 300, 0, "PRESS BUTTON 1 TO FIRE GUNS!", 0, 0);
+				AddObject(MESSAGE, 0, 88, 300, 300, 0, "PRESS CTRL TO FIRE GUNS!", 0, 0);
+			}
+			AddObject(MESSAGE, 0, 80, 300, 300, 0, "READY", 0, 0);
+			AddObject(MESSAGE, 0, 80, 180, 480, 0, "GO!", 0, 0);
+		}
 		for (int i = 0; i < MAXPLAYERS; i++)
 			extralife[i] = 50000;
 		shipwait = 300;
@@ -426,11 +456,18 @@ void NewGame(int mlevel)
 
 		break;
 	default:
+		if ((diedlast != 0) && (mode > 0) && (numdeathscenes > 0))
+			currentscene = &deathscenes[rand() % numdeathscenes];
+		else if ((mode > 0) && (mlevel <= numcutscenes))
+		{
+			currentscene = &cutscenes[mlevel - 1];
+		}
 		for (increment = MAXPLAYERS; increment < MAXSHIPPY; ++increment)
 		{
 			ShippyObjects[increment].used = 0;
 		}
-		AddObject(LEVELMESSAGE, 0, 0, mlevel, 300, 0, NULL, 0, 0);
+		if (currentscene == NULL)
+			AddObject(LEVELMESSAGE, 0, 0, mlevel, 300, 0, NULL, 0, 0);
 
 		for (increment = 0; increment < 20; ++increment)
 		{
@@ -492,8 +529,20 @@ void NewGame(int mlevel)
 					ShippyObjects[increment].health = 10;
 				}
 			}
-			AddObject(MESSAGE, 0, 92, 120, 300, 0, "READY", 0, 0);
-			AddObject(MESSAGE, 0, 92, 180, 480, 0, "GO!", 0, 0);
+			if (currentscene != NULL)
+			{
+				increment = 100;
+				for (int i = 0; i < currentscene->num; i++)
+				{
+					AddObject(CUTSCENE, 0, 103, 400 - increment, 300, currentscene->parts[i].who, currentscene->parts[i].message, 0, 0);
+					increment += 100;
+				}
+			}
+			else
+			{
+				AddObject(MESSAGE, 0, 92, 120, 300, 0, "READY", 0, 0);
+				AddObject(MESSAGE, 0, 92, 180, 480, 0, "GO!", 0, 0);
+			}
 
 			shipwait = 300;
 			timelimit = (72 * 9) + (36 * mlevel);
@@ -566,8 +615,20 @@ void NewGame(int mlevel)
 		AddObject(MESSAGE, 0, 32, 180, 180, 0, acc, 0, 0);
 		AddObject(MESSAGE, 0, 40, 180, 180, 0, eff, 0, 0);
 		AddObject(MESSAGE, 0, 48, 180, 180, 0, bon, 0, 0);
-		AddObject(MESSAGE, 0, 92, 120, 300, 0, "READY", 0, 0);
-		AddObject(MESSAGE, 0, 92, 180, 480, 0, "GO!", 0, 0);
+		if (currentscene != NULL)
+		{
+			increment = 100;
+			for (int i = 0; i < currentscene->num; i++)
+			{
+				AddObject(CUTSCENE, 0, 103, 400 - increment, 300, currentscene->parts[i].who, currentscene->parts[i].message, 0, 0);
+				increment += 100;
+			}
+		}
+		else
+		{
+			AddObject(MESSAGE, 0, 92, 120, 300, 0, "READY", 0, 0);
+			AddObject(MESSAGE, 0, 92, 180, 480, 0, "GO!", 0, 0);
+		}
 
 		shipwait = 300;
 		timelimit = (72 * 9) + (36 * mlevel);
@@ -637,7 +698,7 @@ void RenderShippy(int objnumber)
 		SYSTEM_BLIT(24, 88, ShippyObjects[objnumber].x - 4, ShippyObjects[objnumber].y - 4, 8, 8);
 		break;
 	case LEVELMESSAGE:
-		if (shipwait < 300 && BELATED != 1)
+		if (shipwait < 300)
 		{
 			sprintf(buf, "LEVEL %i", ShippyObjects[objnumber].level);
 			PrintMessage(buf, ((31 - strlen(buf)) / 2) * 8, 104, TEXT_CYAN);
@@ -645,8 +706,19 @@ void RenderShippy(int objnumber)
 		break;
 
 	case MESSAGE:
-		if (ShippyObjects[objnumber].special < ShippyObjects[objnumber].level && BELATED != 1)
+		if (ShippyObjects[objnumber].special < ShippyObjects[objnumber].level)
 			PrintMessage(ShippyObjects[objnumber].msg, ((31 - strlen(ShippyObjects[objnumber].msg)) / 2) * 8, ShippyObjects[objnumber].y, TEXT_WHITE);
+		break;
+
+	case CUTSCENE:
+		if (ShippyObjects[objnumber].special < ShippyObjects[objnumber].level)
+		{
+			if (ShippyObjects[objnumber].health == 0)
+				SYSTEM_BLIT(32, 64, 8, 49, 48, 64);
+			else
+				SYSTEM_BLIT(80, 64, 175, 49, 48, 64);
+			SYSTEM_COMICBUBLE(ShippyObjects[objnumber].health, ShippyObjects[objnumber].y, ShippyObjects[objnumber].msg);
+		}
 		break;
 
 	case ENEMYBULLET:
@@ -737,6 +809,25 @@ void DoAi(int number)
 
 	case MESSAGE:
 		--ShippyObjects[number].special;
+		if (ShippyObjects[number].special < 0)
+			ShippyObjects[number].used = 0;
+		break;
+
+	case CUTSCENE:
+		--ShippyObjects[number].special;
+		if (ShippyObjects[number].special == ShippyObjects[number].level)
+		{
+			for (increment = 0; increment < MAXSHIPPY; ++increment)
+			{
+				if (increment != number && ShippyObjects[increment].used != 0 && ShippyObjects[increment].type == CUTSCENE)
+				{
+					if (ShippyObjects[increment].special < ShippyObjects[increment].level)
+					{
+						ShippyObjects[increment].y -= 12;
+					}
+				}
+			}
+		}
 		if (ShippyObjects[number].special < 0)
 			ShippyObjects[number].used = 0;
 		break;
@@ -946,20 +1037,6 @@ void DoAi(int number)
 #ifdef GODMODE
 		if (jsecond[0])
 			leftmonsters = 0;
-#else
-
-		if (jsecond[0] && BELATED >= 0)
-		{
-			BELATED = 1 - BELATED;
-			if (BELATED == 1)
-				waitforkey[0] = 60;
-			else
-				BELATED = -15;
-		}
-		if (BELATED == 1)
-			return;
-		if (BELATED < 0)
-			++BELATED;
 #endif
 		break;
 
@@ -1449,6 +1526,68 @@ void RestoreHS()
 
 }
 
+void ReadCutScene(FILE *cutfile, cutscene *cut)
+{
+	char line[1024];
+	if (NULL == fgets(line, 1024, cutfile))
+	{
+		fprintf(stderr, "Error reading cutscenes\n");
+		exit(2);
+	}
+	cut->num = atoi(line);
+	cut->parts = (cutscenepart *)malloc(sizeof(cutscenepart) * cut->num);
+	for (int j = 0; j < cut->num; j++)
+	{
+		if (NULL == fgets(line, 1024, cutfile))
+		{
+			fprintf(stderr, "Error reading cutscenes\n");
+			exit(2);
+		}
+		cut->parts[j].who = atoi(line);
+		if (NULL == fgets(line, 1024, cutfile))
+		{
+			fprintf(stderr, "Error reading cutscenes\n");
+			exit(2);
+		}
+		int len = strlen(line);
+		if (len > 0 && (line[len - 1] == '\n'))
+			line[len - 1] = 0;
+		cut->parts[j].message = strdup(line);
+	}
+}
+
+void ReadCutScenes(FILE *cutfile, int *num, cutscene **cuts)
+{
+	char line[1024];
+	if (NULL == fgets(line, 1024, cutfile))
+	{
+		fprintf(stderr, "Error reading cutscenes\n");
+		exit(2);
+	}
+	*num = atoi(line);
+	*cuts = (cutscene *)malloc(sizeof(cutscene) * (*num));
+	for (int i = 0; i < *num; i++)
+	{
+		ReadCutScene(cutfile, (*cuts) + i);
+	}
+}
+
+void InitCutScenes()
+{
+	char fname[1024];
+	FILE *cutscenefile;
+	numcutscenes = 0;
+	numdeathscenes = 0;
+	strcpy(fname, get_data_path());
+	strcat(fname, "cutscenes.txt");
+	cutscenefile = fopen(fname, "r");
+	if (cutscenefile == NULL)
+		return;
+	ReadCutScenes(cutscenefile, &numcutscenes, &cutscenes);
+	ReadCutScenes(cutscenefile, &numdeathscenes, &deathscenes);
+	fclose(cutscenefile);
+}
+
 #define GAMESTATE_ACTIVE 0
 #define GAMESTATE_GAMEOVER 1
 #define GAMESTATE_NEXTLEVEL 2
@@ -1589,6 +1728,10 @@ void ExecShippy()
 		}
 		if (shipwait > 0)
 			--shipwait;
+		if (jdiry[0] > 0)
+			SYSTEM_SETMODE(0);
+		else if (jdiry[0] < 0)
+			SYSTEM_SETMODE(1);
 		if (jaction[0] || jsecond[0] || players[0] || players[1])
 		{
 			StartGameState();
@@ -1713,6 +1856,10 @@ void ExecShippy()
 			if (shipwait > 0)
 				--shipwait;
 
+			if (jdiry[0] > 0)
+				SYSTEM_SETMODE(0);
+			else if (jdiry[0] < 0)
+				SYSTEM_SETMODE(1);
 			if (jaction[0] || players[0] || players[1])
 			{
 				if (gamestate == SCORES)
@@ -1839,6 +1986,10 @@ void ExecShippy()
 				operational = 0;
 				waitforkey[0] = waitforkey[1] = 30;
 			}
+			if (jdirx[0] > 0)
+				SYSTEM_SETMODE(1);
+			else if (jdirx[0] < 0)
+				SYSTEM_SETMODE(0);
 			return;
 		}
 		if (gameover == 0)
@@ -1872,8 +2023,6 @@ static void show_usage(char *name, FILE * f)
 					"-a\tArcade mode\n" "-h\tHelp, display this help and exit\n", name);
 }
 
-char *savePath[3] = {".local", "share", "shippy"};
-
 int SHIPPY_MAIN(int argc, char *argv[])
 {
 	int i;
@@ -1887,13 +2036,13 @@ int SHIPPY_MAIN(int argc, char *argv[])
 #ifdef __unix__
 	if (highscore_fp == NULL)
 	{
-			highscore_fp = fopen("/usr/share/shippy/shippy.hs", "r");
+		highscore_fp = fopen("/usr/share/shippy/shippy.hs", "r");
 	}
 #endif
 	RestoreHS();
 	if (highscore_fp != NULL)
 	{
-			fclose(highscore_fp);
+		fclose(highscore_fp);
 	}
 	highscore_fp = fopen(saveName, "w+");
 	StoreHS();
@@ -1907,6 +2056,7 @@ int SHIPPY_MAIN(int argc, char *argv[])
 		game_id = GamerzillaSetGameFromFile(fname, get_data_path());
 	}
 #endif
+	InitCutScenes();
 
 	for (i = 1; i < argc; i++)
 	{

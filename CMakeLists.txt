@@ -1,5 +1,5 @@
-Project (shippy)
 CMake_Minimum_Required (VERSION 3.1)
+Project (shippy)
 
 #Path options
 Set (BINDIR "bin" CACHE STRING "Where to install binaries")
@@ -13,7 +13,11 @@ INCLUDE(FindPkgConfig)
 #Find the required libraries.
 PKG_SEARCH_MODULE(SDL2 REQUIRED sdl2)
 PKG_SEARCH_MODULE(SDL2_MIXER REQUIRED SDL2_mixer)
-PKG_SEARCH_MODULE(GAMERZILLA OPTIONAL gamerzilla)
+PKG_SEARCH_MODULE(SDL2_TTF REQUIRED SDL2_ttf)
+if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
+	PKG_SEARCH_MODULE(GAMERZILLA OPTIONAL gamerzilla)
+	PKG_SEARCH_MODULE(FONTCONFIG REQUIRED fontconfig)
+endif ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")
 
 if (GAMERZILLA_LIBRARIES)
 	message(STATUS "Gamerzilla found")
@@ -24,7 +28,9 @@ endif()
 Include_Directories(
 	${SDL2_INCLUDE_DIRS}
 	${SDL2_MIXER_INCLUDE_DIRS}
+	${SDL2_TTF_INCLUDE_DIRS}
 	${GAMERZILLA_INCLUDE_DIRS}
+	${FONTCONFIG_INCLUDE_DIRS}
 )
 
 #Set the output path and the source path.
@@ -40,7 +46,9 @@ Target_Link_Libraries (
 	${PROJECT_NAME}
 	${SDL2_LIBRARIES}
 	${SDL2_MIXER_LIBRARIES}
+	${SDL2_TTF_LIBRARIES}
 	${GAMERZILLA_LIBRARIES}
+	${FONTCONFIG_LIBRARIES}
 	${SDL2MAIN_LIBRARIES}
  -lm
 )
@@ -60,6 +68,7 @@ Install (FILES ${PROJECT_SOURCE_DIR}/data/splash.bmp DESTINATION ${DATAROOTDIR}/
 Install (FILES ${PROJECT_SOURCE_DIR}/data/splash2.bmp DESTINATION ${DATAROOTDIR}/shippy/)
 Install (FILES ${PROJECT_SOURCE_DIR}/data/splash.wav DESTINATION ${DATAROOTDIR}/shippy/)
 Install (FILES ${PROJECT_SOURCE_DIR}/data/title.xm DESTINATION ${DATAROOTDIR}/shippy/)
+Install (FILES ${PROJECT_SOURCE_DIR}/data/LiberationSans-Bold.ttf DESTINATION ${DATAROOTDIR}/shippy/)
 Install (TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${BINDIR})
 
 if ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux")

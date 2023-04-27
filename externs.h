@@ -14,5 +14,6 @@ extern int use_arcade_mode;
 extern int screen_width;
 extern int screen_height;
 extern int players[2];
+extern int mode;
 
 #endif
