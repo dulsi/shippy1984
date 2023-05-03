@@ -7,9 +7,17 @@
 #define DATADIR "data/"
 #endif
 
+#define SOUND_DIE 0
+#define SOUND_FANFARE 1
+#define SOUND_HELIX 2
+#define SOUND_HIT 3
+#define SOUND_SHOT 4
+#define SOUND_SPLASH 5
+#define MAX_SOUNDS 6
+
 void Start_Audio();
 void audio_start();
-void audio_play(char *wav);
+void audio_play(int sound);
 void audio_music(char *mfile);
 void audio_exec();
 void audio_end();

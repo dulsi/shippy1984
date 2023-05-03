@@ -955,7 +955,7 @@ void DoAi(int number)
 						if (shots[number] < 10)
 						{
 							AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, number, 0, 0, NULL, 0, 0);
-							audio_play("shot.wav");
+							audio_play(SOUND_SHOT);
 							++shots[number];
 							++firedshots;
 						}
@@ -969,7 +969,7 @@ void DoAi(int number)
 					{
 						if (shots[number] < 6)
 						{
-							audio_play("helix.wav");
+							audio_play(SOUND_HELIX);
 							AddObject(BULLWAVE, ShippyObjects[number].x - 6, ShippyObjects[number].y - 8, number, -16, 0, NULL, 0, 0);
 							AddObject(BULLWAVE, ShippyObjects[number].x + 6, ShippyObjects[number].y - 8, number, 16, 0, NULL, 0, 0);
 							shots[number] += 2;
@@ -991,7 +991,7 @@ void DoAi(int number)
 					if (shots[number] < 3)
 					{
 						AddObject(BULLET, ShippyObjects[number].x, ShippyObjects[number].y, number, 0, 0, NULL, 0, 0);
-						audio_play("shot.wav");
+						audio_play(SOUND_SHOT);
 						++shots[number];
 						++firedshots;
 					}
@@ -1151,7 +1151,7 @@ void DoAi(int number)
 											ShippyObjects[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
 					}
 
-					audio_play("die.wav");
+					audio_play(SOUND_DIE);
 					ShippyObjects[number].type = EXPLOSION;
 					ShippyObjects[number].special = 4;
 					--leftmonsters;
@@ -1249,7 +1249,7 @@ void DoAi(int number)
 								AddObject(EXPLOSION, ShippyObjects[increment].x + ((rand() % 3) - 1) * 4, ShippyObjects[increment].y + ((rand() % 3) - 1) * 4, 0, rand() % 48, 0, NULL, 0, 0);
 
 							}
-							audio_play("hit.wav");
+							audio_play(SOUND_HIT);
 							break;
 
 						case ENEMYSHIPPY:
@@ -1259,7 +1259,7 @@ void DoAi(int number)
 							{
 								AddObject(EXPLOSION, ShippyObjects[increment].x + ((rand() % 3) - 1) * 4, ShippyObjects[increment].y + ((rand() % 3) - 1) * 4, 0, rand() % 48, 0, NULL, 0, 0);
 							}
-							audio_play("hit.wav");
+							audio_play(SOUND_HIT);
 							break;
 
 						case FEZBOMB:
@@ -1273,7 +1273,7 @@ void DoAi(int number)
 							{
 								AddObject(EXPLOSION, ShippyObjects[increment].x + ((rand() % 3) - 1) * 4, ShippyObjects[increment].y + ((rand() % 3) - 1) * 4, 0, rand() % 48, 0, NULL, 0, 0);
 							}
-							audio_play("hit.wav");
+							audio_play(SOUND_HIT);
 							break;
 
 						}
@@ -1365,7 +1365,7 @@ void DoAi(int number)
 												[number].y * 64, (rand() % 3 > 1) ? 255 : 0, 255, 0, NULL, ((rand() % 3) - 1) * (64 + (rand() % 256)), ((rand() % 3) - 1) * (64 + (rand() % 256)));
 						}
 
-						audio_play("die.wav");
+						audio_play(SOUND_DIE);
 						ShippyObjects[number].type = EXPLOSION;
 						ShippyObjects[number].special = 4;
 						return;
@@ -1716,7 +1716,7 @@ void ExecShippy()
 		{
 			--operational;
 			if (operational == 0)
-				audio_play("splash.wav");
+				audio_play(SOUND_SPLASH);
 		}
 		if (waitforkey[0] == 0)
 		{
@@ -1757,7 +1757,7 @@ void ExecShippy()
 			{
 				ShippyObjects[i].lives++;
 				extralife[i] *= 2;
-				audio_play("fanfare.wav");
+				audio_play(SOUND_FANFARE);
 
 			}
 		}
@@ -1916,7 +1916,7 @@ void ExecShippy()
 			{
 				ShippyObjects[i].lives++;
 				extralife[i] *= 2;
-				audio_play("fanfare.wav");
+				audio_play(SOUND_FANFARE);
 
 			}
 		}

@@ -63,7 +63,6 @@ typedef struct fontcache_s {
 #define MAX_FONTCACHE 20
 fontcache textcache[MAX_FONTCACHE];
 
-#define MAX_SAMPLES 8
 SDL_Texture *CreateSurfaceFromBitmap(char *bmpfile, Uint32 flags)
 {
 	SDL_Surface *junktemp;
@@ -82,11 +81,20 @@ SDL_Texture *CreateSurfaceFromBitmap(char *bmpfile, Uint32 flags)
 
 int audio_op = 0;
 Mix_Music *music = NULL;
+Mix_Chunk *soundeffects[MAX_SOUNDS];
+const char *soundfiles[MAX_SOUNDS] = {
+	"die.wav",
+	"fanfare.wav",
+	"helix.wav",
+	"hit.wav",
+	"shot.wav",
+	"splash.wav"
+};
 
+#define MAX_SAMPLES 8
 struct SAMPLEHOLDER
 {
 	int loaded;
-	char samplename[512];
 	Mix_Chunk *sample;
 	int voice;
 	int counter;
@@ -102,7 +110,6 @@ void Start_Audio()
 	for (i = 0; i < MAX_SAMPLES; ++i)
 	{
 		samples[i].loaded = 0;
-		samples[i].samplename[0] = 0;
 		samples[i].sample = NULL;
 		samples[i].voice = -1;
 		samples[i].counter = 0;
@@ -117,9 +124,16 @@ void audio_start()
 		audio_op = 0;
 	else
 		audio_op = 1;
+	for (int i = 0; i < MAX_SOUNDS; i++)
+	{
+		char fname[1024];
+		strcpy(fname, get_data_path());
+		strcat(fname, soundfiles[i]);
+		soundeffects[i] = Mix_LoadWAV(fname);
+	}
 }
 
-void audio_play(char *wav)
+void audio_play(int sound)
 {
 	//check to see if the sample is loaded
 	int i;
@@ -129,11 +143,7 @@ void audio_play(char *wav)
 	{
 		if (samples[i].istaken == 0)
 		{
-			char fname[1024];
-			strcpy(fname, get_data_path());
-			strcat(fname, wav);
-			samples[i].sample = Mix_LoadWAV(fname);
-			strcpy(samples[i].samplename, wav);
+			samples[i].sample = soundeffects[sound];
 			samples[i].voice = Mix_PlayChannel(-1, samples[i].sample, 0);
 			samples[i].loaded = 1;
 			samples[i].istaken = 1;
@@ -197,7 +207,6 @@ void audio_exec()
 					{
 						Mix_HaltChannel(samples[i].voice);
 						samples[i].voice = -1;
-						Mix_FreeChunk(samples[i].sample);
 						samples[i].sample = NULL;
 						samples[i].istaken = 0;
 					}
@@ -218,8 +227,11 @@ void audio_end()
 		{
 			Mix_HaltChannel(samples[i].voice);
 			samples[i].voice = -1;
-			Mix_FreeChunk(samples[i].sample);
 		}
+	}
+	for (i = 0; i < MAX_SOUNDS; ++i)
+	{
+		Mix_FreeChunk(soundeffects[i]);
 	}
 }
 
