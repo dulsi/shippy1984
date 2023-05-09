@@ -144,6 +144,8 @@ int numcutscenes;
 cutscene *cutscenes;
 int numdeathscenes;
 cutscene *deathscenes;
+int numoverscenes;
+cutscene *overscenes;
 
 int compare(const void *a, const void *b)
 {
@@ -273,6 +275,10 @@ void DrawOverlay()
 				}
 				PrintChar(curname[1][i], 208 + (i * 8), 152, TEXT_WHITE);
 			}
+		}
+		if (gameover == 1)
+		{
+			PrintMessage("GAME OVER!", 88, (mode == 1 ? 45 : 112), TEXT_RED);
 		}
 		break;
 	case TITLE:
@@ -715,9 +721,11 @@ void RenderShippy(int objnumber)
 		{
 			if (ShippyObjects[objnumber].health == 0)
 				SYSTEM_BLIT(32, 64, 8, 49, 48, 64);
-			else
+			else if (ShippyObjects[objnumber].health == 1)
 				SYSTEM_BLIT(80, 64, 175, 49, 48, 64);
-			SYSTEM_COMICBUBLE(ShippyObjects[objnumber].health, ShippyObjects[objnumber].y, ShippyObjects[objnumber].msg);
+			else if (ShippyObjects[objnumber].health == 2)
+				SYSTEM_BLIT(144, 64, 175, 49, 48, 64);
+			SYSTEM_COMICBUBLE((ShippyObjects[objnumber].health == 0 ? 0 : 1), ShippyObjects[objnumber].y, ShippyObjects[objnumber].msg);
 		}
 		break;
 
@@ -1585,6 +1593,7 @@ void InitCutScenes()
 		return;
 	ReadCutScenes(cutscenefile, &numcutscenes, &cutscenes);
 	ReadCutScenes(cutscenefile, &numdeathscenes, &deathscenes);
+	ReadCutScenes(cutscenefile, &numoverscenes, &overscenes);
 	fclose(cutscenefile);
 }
 
@@ -1670,6 +1679,30 @@ void InitShippy()
 	gameover = 0;
 	operational = 150;
 
+}
+
+void GameoverScreen()
+{
+	if ((mode > 0) && (numoverscenes > 0))
+	{
+		cutscene *currentscene = &overscenes[rand() % numoverscenes];
+		int increment = 100;
+		for (int i = 0; i < currentscene->num; i++)
+		{
+			AddObject(CUTSCENE, 0, 103, 550 - increment, 550, currentscene->parts[i].who, currentscene->parts[i].message, 0, 0);
+			increment += 100;
+		}
+	}
+	else
+	{
+		AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
+		AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
+		AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
+	}
+	waitforkey[0] = waitforkey[1] = 480;
+	shipwait = 600;
+
+	gameover = 1;
 }
 
 void ExecShippy()
@@ -1790,13 +1823,7 @@ void ExecShippy()
 						}
 						break;
 					case GAMESTATE_GAMEOVER:
-						AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
-						AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
-						AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
-						waitforkey[0] = waitforkey[1] = 480;
-						shipwait = 600;
-
-						gameover = 1;
+						GameoverScreen();
 						break;
 					case GAMESTATE_NEXTLEVEL:
 						for (int i = 0; i < MAXPLAYERS; i++)
@@ -1819,7 +1846,6 @@ void ExecShippy()
 			}
 			if (gameover == 1)
 			{
-				PrintMessage("GAME OVER!", 88, 112, TEXT_RED);
 				if ((jaction[0]) || (shipwait == 0))
 				{
 					waitforkey[0] = waitforkey[1] = 360;
@@ -1962,13 +1988,7 @@ void ExecShippy()
 				}
 				else if (over == 2)
 				{
-					AddObject(MESSAGE, 0, 48, 360, 480, 0, "THE ANGRY FEZ HAS WON!", 0, 0);
-					AddObject(MESSAGE, 0, 56, 240, 480, 0, "GOOD LUCK NEXT TRY!", 0, 0);
-					AddObject(MESSAGE, 0, 80, 360, 720, 0, "THANK YOU FOR PLAYING!", 0, 0);
-					waitforkey[0] = waitforkey[1] = 480;
-					shipwait = 600;
-
-					gameover = 1;
+					GameoverScreen();
 				}
 			}
 			if (shipwait > 0)
