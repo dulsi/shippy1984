@@ -865,7 +865,7 @@ void DoAi(int number)
 						ShippyObjects[number].special = SHIPPY_SPECIAL_INITIAL;
 						strcpy(curname[number], "   ");
 						operational = 1;
-						waitforkey[number] = 50;
+						waitforkey[number] = 250;
 						currchar[number] = 'A';
 						curlevel[number] = level;
 					}
@@ -1846,7 +1846,7 @@ void ExecShippy()
 			}
 			if (gameover == 1)
 			{
-				if ((jaction[0]) || (shipwait == 0))
+				if (shipwait == 0 || ((mode == 0) && (jaction[0])))
 				{
 					waitforkey[0] = waitforkey[1] = 360;
 					gamestate = SCORES;
