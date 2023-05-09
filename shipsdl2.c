@@ -26,12 +26,13 @@
 #define SHIPPY_1 15
 #define SHIPPY_2 16
 #define SHIPPY_SPACE 17
+#define SHIPPY_NONE 18
 
 SDL_Window *screen = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Texture *BackBuffer = NULL;
 SDL_Texture *Graphics = NULL;
-SDL_Joystick *Joystick = NULL;
+SDL_GameController *Joystick[2] = { NULL, NULL };
 Uint8 key[1337];
 static bool fullscreen = true;
 static int modes[2][3] = { {240, 160, 1}, {480, 320, 2} };
@@ -47,6 +48,42 @@ int jsecond[2] = { 0, 0 };
 int waitforkey[2] = { 360, 360 };
 int players[2] = { 0, 0 };
 int mode = -1;
+
+struct keyconfig {
+	int down;
+	int up;
+	int right;
+	int left;
+	int action1;
+	int action2;
+	int cancel;
+	int start;
+};
+
+struct keyconfig keyconfigs[2] =
+{
+	{
+		.down = SHIPPY_DOWN,
+		.up = SHIPPY_UP,
+		.right = SHIPPY_RIGHT,
+		.left = SHIPPY_LEFT,
+		.action1 = SHIPPY_LCTRL,
+		.action2 = SHIPPY_SPACE,
+		.action2 = SHIPPY_SPACE,
+		.cancel = SHIPPY_BACKSPACE,
+		.start = SHIPPY_1
+	},
+	{
+		.down = SHIPPY_F,
+		.up = SHIPPY_R,
+		.right = SHIPPY_G,
+		.left = SHIPPY_D,
+		.action1 = SHIPPY_Q,
+		.action2 = SHIPPY_NONE,
+		.cancel = SHIPPY_S,
+		.start = SHIPPY_2
+	}
+};
 
 volatile int objectsynch = 0;
 Uint32 timing;
@@ -298,8 +335,9 @@ void SYSTEM_SETMODE(int num)
 
 int SYSTEM_INIT()
 {
+	int i;
 
-	if ((SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK) == -1))
+	if ((SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) == -1))
 	{
 		return 1;
 	}
@@ -315,10 +353,23 @@ int SYSTEM_INIT()
 
 	audio_start();
 
-	Joystick = SDL_JoystickOpen(0);
+	int joyIndex = 0;
+	int maxJoysticks = SDL_NumJoysticks();
+	for (i = 0; i < 2; i++)
+	{
+		for(; joyIndex < maxJoysticks; ++joyIndex)
+		{
+			if (SDL_IsGameController(joyIndex))
+			{
+				Joystick[i] = SDL_GameControllerOpen(joyIndex);
+				++joyIndex;
+				break;
+			}
+		}
+	}
 
 	font = GetDefaultFont(get_data_path());
-	for (int i = 0; i < MAX_FONTCACHE; i++)
+	for (i = 0; i < MAX_FONTCACHE; i++)
 	{
 		textcache[i].used = 0;
 	}
@@ -330,8 +381,11 @@ int SYSTEM_CLEAN()
 {
 	SYSTEM_CLEANBMP();
 	End_Audio();
-	if (Joystick)
-		SDL_JoystickClose(Joystick);
+	for (int i = 0; i < 2; i++)
+	{
+		if (Joystick[i])
+			SDL_GameControllerClose(Joystick[i]);
+	}
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(screen);
 	SDL_Quit();
@@ -485,65 +539,58 @@ void SYSTEM_COMICBUBLE(int dir, int y, const char *msg)
 	}
 }
 
+void UpdatePlayerInput(int player)
+{
+	jaction[player] = 0;
+	jsecond[player] = 0;
+	jdirx[player] = 0;
+	jdiry[player] = 0;
+	players[player] = 0;
+	if (waitforkey[player] > 0)
+	{
+		--waitforkey[player];
+	}
+	else
+	{
+		if (Joystick[player])
+		{
+			SDL_JoystickUpdate();
+			players[player] = SDL_GameControllerGetButton(Joystick[player], SDL_CONTROLLER_BUTTON_START);
+			jaction[player] = SDL_GameControllerGetButton(Joystick[player], SDL_CONTROLLER_BUTTON_A);
+			jsecond[player] = SDL_GameControllerGetButton(Joystick[player], SDL_CONTROLLER_BUTTON_B);
+			jdirx[player] = SDL_GameControllerGetAxis(Joystick[player], SDL_CONTROLLER_AXIS_LEFTX) / (50 * 256);
+			jdiry[player] = SDL_GameControllerGetAxis(Joystick[player], SDL_CONTROLLER_AXIS_LEFTY) / (65 * 256);
+			if (jdirx[player] == 0)
+				jdirx[player] = (SDL_GameControllerGetButton(Joystick[player], SDL_CONTROLLER_BUTTON_DPAD_RIGHT) - SDL_GameControllerGetButton(Joystick[player], SDL_CONTROLLER_BUTTON_DPAD_LEFT)) * 2;
+			if (jdiry[player] == 0)
+				jdiry[player] = (SDL_GameControllerGetButton(Joystick[player], SDL_CONTROLLER_BUTTON_DPAD_DOWN) - SDL_GameControllerGetButton(Joystick[player], SDL_CONTROLLER_BUTTON_DPAD_UP)) * 2;
+		}
+
+		if (jdirx[player] == 0)
+			jdirx[player] = (key[keyconfigs[player].right] - key[keyconfigs[player].left]) * 2;
+		if (jdiry[player] == 0)
+			jdiry[player] = key[keyconfigs[player].down] - key[keyconfigs[player].up];
+		if (jaction[player] == 0)
+			jaction[player] = key[keyconfigs[player].action1];
+		if (jaction[player] == 0)
+			jaction[player] = key[keyconfigs[player].action2];
+		if (jsecond[player] == 0)
+			jsecond[player] = key[keyconfigs[player].cancel];
+
+		if (players[player] == 0)
+			players[player] = key[keyconfigs[player].start];
+	}
+}
+
 void SYSTEM_POLLINPUT()
 {
 	for (int i = 0; i < 2; i++)
 	{
-		jaction[i] = 0;
-		jsecond[i] = 0;
-		jdirx[i] = 0;
-		jdiry[i] = 0;
+		UpdatePlayerInput(i);
 	}
 
 	if (key[SHIPPY_ESCAPE])
 		done = 1;
-
-	if (waitforkey[0] > 0)
-	{
-		--waitforkey[0];
-	}
-	else
-	{
-		if (Joystick)
-		{
-			SDL_JoystickUpdate();
-			jaction[0] = SDL_JoystickGetButton(Joystick, 0);
-			jsecond[0] = SDL_JoystickGetButton(Joystick, 1);
-			jdirx[0] = SDL_JoystickGetAxis(Joystick, 0) / (50 * 256);
-			jdiry[0] = SDL_JoystickGetAxis(Joystick, 1) / (65 * 256);
-		}
-
-		if (jdirx[0] == 0)
-			jdirx[0] = (key[SHIPPY_RIGHT] - key[SHIPPY_LEFT]) * 2;
-		if (jdiry[0] == 0)
-			jdiry[0] = key[SHIPPY_DOWN] - key[SHIPPY_UP];
-		if (jaction[0] == 0)
-			jaction[0] = key[SHIPPY_LCTRL];
-		if (jaction[0] == 0)
-			jaction[0] = key[SHIPPY_SPACE];
-		if (jsecond[0] == 0)
-			jsecond[0] = key[SHIPPY_BACKSPACE];
-
-		players[0] = key[SHIPPY_1];
-	}
-
-	if (waitforkey[1] > 0)
-	{
-		--waitforkey[1];
-	}
-	else
-	{
-		if (jdirx[1] == 0)
-			jdirx[1] = (key[SHIPPY_G] - key[SHIPPY_D]) * 2;
-		if (jdiry[1] == 0)
-			jdiry[1] = key[SHIPPY_F] - key[SHIPPY_R];
-		if (jaction[1] == 0)
-			jaction[1] = key[SHIPPY_Q];
-		if (jsecond[1] == 0)
-			jsecond[1] = key[SHIPPY_S];
-
-		players[1] = key[SHIPPY_2];
-	}
 	if (players[0] && players[1])
 		done = 1;
 }
