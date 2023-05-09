@@ -337,9 +337,22 @@ int IsHit(int x1, int y1, int r1, int x2, int y2, int r2)
 
 int AddObject(int type, int x, int y, int level, int special, int health, char *msg, int dx, int dy)
 {
-	int increment;
+	int increment = 0;
 
-	for (increment = 0; increment < MAXSHIPPY; ++increment)
+	// Hack to try to make cutscenes drawn last.
+	if (type == CUTSCENE)
+	{
+		for (increment = MAXSHIPPY - 10; increment < MAXSHIPPY; ++increment)
+		{
+			if (ShippyObjects[increment].used == 0)
+			{
+				break;
+			}
+		}
+		if (increment == MAXSHIPPY)
+			increment = 0;
+	}
+	for (; increment < MAXSHIPPY; ++increment)
 	{
 		if (ShippyObjects[increment].used == 0)
 		{
