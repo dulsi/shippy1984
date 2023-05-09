@@ -332,6 +332,9 @@ int SYSTEM_CLEAN()
 	End_Audio();
 	if (Joystick)
 		SDL_JoystickClose(Joystick);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(screen);
+	SDL_Quit();
 	return 0;
 }
 
