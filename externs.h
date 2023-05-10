@@ -15,5 +15,7 @@ extern int screen_width;
 extern int screen_height;
 extern int players[2];
 extern int mode;
+extern int powerup[2];
+extern int powerupframe[2];
 
 #endif

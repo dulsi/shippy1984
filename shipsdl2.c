@@ -463,6 +463,14 @@ void SYSTEM_BLIT(int sx, int sy, int x, int y, int szx, int szy)
 			int mult = ((frame % (4 * 12)) / 12);
 			sx += 80 * mult;
 		}
+		else if ((sx == 0) && (powerupframe[0] > 0) && (y != 144))
+		{
+			sx += 80 + 80 * powerup[0];
+		}
+		else if ((sx == 16) && (powerupframe[1] > 0) && (y != 144))
+		{
+			sx += 80 + 80 * powerup[1];
+		}
 	}
 	src.x = sx * modes[mode][2];
 	src.y = sy * modes[mode][2];

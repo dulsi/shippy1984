@@ -97,8 +97,8 @@ int fps = 0;
 int frames = 0;
 int countframes = 0;
 int gamestate = SPLASH;
-int powerup = 0;
-int powerupframe = 0;
+int powerup[MAXPLAYERS] = { 0, 0 };
+int powerupframe[MAXPLAYERS] = { 0, 0 };
 int extralife[MAXPLAYERS] = { 50000, 50000 };
 int shipwait = 0;
 int leftmonsters = 0;
@@ -231,9 +231,9 @@ void DrawOverlay()
 		PrintMessage("2UP", 215, 0, TEXT_RED);
 		PrintMessage(buf, 240 - (strlen(buf) * 8), 8, TEXT_WHITE);
 
-		if (powerupframe > 0)
+		if ((mode == 0) && (powerupframe[0] > 0))
 		{
-			switch (powerup)
+			switch (powerup[0])
 			{
 			case POWER_RAPID:
 				PrintMessage("GO UNLIMITED BULLETS!", 64, 152, TEXT_CYAN);
@@ -386,8 +386,10 @@ void NewGame(int mlevel)
 
 	currentscene = NULL;
 	for (increment = 0; increment < MAXPLAYERS; ++increment)
+	{
 		shots[increment] = 0;
-	powerupframe = 0;
+		powerupframe[increment] = 0;
+	}
 	switch (mlevel)
 	{
 	case -2:
@@ -965,10 +967,10 @@ void DoAi(int number)
 
 		if (runsim && shipwait == 0)
 		{
-			if (powerupframe > 0)
+			if (powerupframe[number] > 0)
 			{
 
-				switch (powerup)
+				switch (powerup[number])
 				{
 				case POWER_RAPID:
 					if (ShippyObjects[number].special == SHIPPY_SPECIAL_NONE)
@@ -1335,8 +1337,19 @@ void DoAi(int number)
 			{
 				++ShippyObjects[i].level;
 				ShippyObjects[number].used = 0;
-				powerup = ShippyObjects[number].dx;
-				powerupframe = 360;
+				if (mode == 0)
+				{
+					for (int j = 0; j < MAXPLAYERS; j++)
+					{
+						powerup[j] = ShippyObjects[number].dx;
+						powerupframe[j] = 360;
+					}
+				}
+				else
+				{
+					powerup[i] = ShippyObjects[number].dx;
+					powerupframe[i] = 360;
+				}
 				return;
 			}
 		}
@@ -1850,20 +1863,23 @@ void ExecShippy()
 			}
 			if (shipwait > 0)
 				--shipwait;
-			if (powerupframe > 0)
-				--powerupframe;
 			for (int i = 0; i < MAXPLAYERS; i++)
 			{
 				if (score[i] > highscore)
 					highscore = score[i];
+				if (powerupframe[i] > 0)
+					--powerupframe[i];
 			}
 			if (gameover == 1)
 			{
 				if (shipwait == 0 || ((mode == 0) && (jaction[0])))
 				{
-					waitforkey[0] = waitforkey[1] = 360;
+					for (int i = 0; i < MAXPLAYERS; i++)
+					{
+						waitforkey[i] = 360;
+						powerupframe[i] = 0;
+					}
 					gamestate = SCORES;
-					powerupframe = 0;
 					shipwait = 0;
 					leftmonsters = 0;
 					level = 0;
@@ -1904,13 +1920,16 @@ void ExecShippy()
 				if (gamestate == SCORES)
 				{
 					gamestate = TITLE;
-					powerupframe = 0;
+					for (int i = 0; i < MAXPLAYERS; i++)
+					{
+						powerupframe[i] = 0;
+						waitforkey[i] = 30;
+					}
 					shipwait = 0;
 					leftmonsters = 0;
 					level = 0;
 					gameover = 0;
 					operational = 0;
-					waitforkey[0] = waitforkey[1] = 30;
 					return;
 				}
 				else
@@ -1925,7 +1944,10 @@ void ExecShippy()
 				{
 					gamestate = SCORES;
 					operational = 0;
-					powerupframe = 0;
+					for (increment = 0; increment < MAXPLAYERS; increment++)
+					{
+						powerupframe[increment] = 0;
+					}
 					shipwait = 0;
 					leftmonsters = 0;
 					level = 0;
@@ -1942,7 +1964,10 @@ void ExecShippy()
 					StartGameState();
 					gamestate = DEMO;
 					operational = 1800;
-					powerupframe = 0;
+					for (increment = 0; increment < MAXPLAYERS; increment++)
+					{
+						powerupframe[increment] = 0;
+					}
 					shipwait = 0;
 				}
 			}
@@ -2006,12 +2031,12 @@ void ExecShippy()
 			}
 			if (shipwait > 0)
 				--shipwait;
-			if (powerupframe > 0)
-				--powerupframe;
 			for (int i = 0; i < MAXPLAYERS; i++)
 			{
 				if (score[i] > highscore)
 					highscore = score[i];
+				if (powerupframe[i] > 0)
+					--powerupframe[i];
 			}
 			--operational;
 			if (jaction[0] || players[0] || players[1])
@@ -2035,7 +2060,8 @@ void ExecShippy()
 		if (operational <= 0)
 		{
 			gamestate = SPLASH;
-			powerupframe = 0;
+			for (int i = 0; i < MAXPLAYERS; i++)
+				powerupframe[i] = 0;
 			leftmonsters = 0;
 			level = 0;
 			gameover = 0;
