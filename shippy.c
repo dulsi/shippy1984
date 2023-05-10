@@ -716,7 +716,7 @@ void RenderShippy(int objnumber)
 		break;
 
 	case POWERUP:
-		SYSTEM_BLIT(24, 88, ShippyObjects[objnumber].x - 4, ShippyObjects[objnumber].y - 4, 8, 8);
+		SYSTEM_BLIT(24, 88 + 8 * ShippyObjects[objnumber].dx, ShippyObjects[objnumber].x - 4, ShippyObjects[objnumber].y - 4, 8, 8);
 		break;
 	case LEVELMESSAGE:
 		if (shipwait < 300)
