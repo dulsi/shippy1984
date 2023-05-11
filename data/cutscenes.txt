@@ -1,4 +1,4 @@
-2
+3
 3
 0
 We're being invaded.
@@ -13,6 +13,13 @@ Why go back and forth?
 It's their tunes.
 1
 They move with the rhythm of the beat.
+3
+0
+More invaders from space?
+1
+How about space invaders?
+0
+Not that name for... reasons.
 3
 2
 1
