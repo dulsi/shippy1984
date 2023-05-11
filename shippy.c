@@ -815,6 +815,30 @@ int analyze()
 
 }
 
+int TrackPlayer(int objectx, int width)
+{
+	int who = -1;
+	int dist;
+	for (int i = 0; i < MAXPLAYERS; i++)
+	{
+		if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || (ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL))
+			continue;
+		if (who == -1 || dist > abs(objectx - ShippyObjects[i].x))
+		{
+			who = i;
+			dist = abs(objectx - ShippyObjects[i].x);
+		}
+	}
+	if (who != -1)
+	{
+		if (objectx < ShippyObjects[who].x - width)
+			return 1;
+		else if (width == 0 || (objectx > ShippyObjects[who].x + width))
+			return -1;
+	}
+	return 0;
+}
+
 void DoAi(int number)
 {
 	if (ShippyObjects[number].used == 0)
@@ -1362,18 +1386,11 @@ void DoAi(int number)
 
 		if (ShippyObjects[number].type == ENEMYBHEART)
 		{
-			if (ShippyObjects[number].x < ShippyObjects[0].x)
-				++ShippyObjects[number].x;
-			else
-				--ShippyObjects[number].x;
-
+			ShippyObjects[number].x += TrackPlayer(ShippyObjects[number].x, 0);
 		}
 		if (ShippyObjects[number].type == FEZBOMB)
 		{
-			if (ShippyObjects[number].x < ShippyObjects[0].x - 6)
-				++ShippyObjects[number].x;
-			else if (ShippyObjects[number].x > ShippyObjects[0].x + 6)
-				--ShippyObjects[number].x;
+			ShippyObjects[number].x += TrackPlayer(ShippyObjects[number].x, 6);
 		}
 		++ShippyObjects[number].y;
 
