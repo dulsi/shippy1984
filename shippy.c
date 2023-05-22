@@ -219,7 +219,7 @@ void DrawOverlay()
 		}
 		for (increment = 0; increment < ShippyObjects[1].lives; ++increment)
 		{
-			SYSTEM_BLIT(256, 48, 224 - (increment * test), 160 - test, test, test);
+			SYSTEM_BLIT(256, 48, 240 - ((increment + 1) * test), 160 - test, test, test);
 		}
 
 		sprintf(buf, "%i", score[0]);
