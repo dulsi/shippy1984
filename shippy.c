@@ -212,13 +212,14 @@ void DrawOverlay()
 			PrintMessage(buf, 104, 144, TEXT_WHITE);
 		}
 
+		test = (mode ? 8 : 16);
 		for (increment = 0; increment < ShippyObjects[0].lives; ++increment)
 		{
-			SYSTEM_BLIT(0, 48, increment * 16, 144, 16, 16);
+			SYSTEM_BLIT(240, 48, increment * test, 160 - test, test, test);
 		}
 		for (increment = 0; increment < ShippyObjects[1].lives; ++increment)
 		{
-			SYSTEM_BLIT(16, 48, 224 - (increment * 16), 144, 16, 16);
+			SYSTEM_BLIT(256, 48, 224 - (increment * test), 160 - test, test, test);
 		}
 
 		sprintf(buf, "%i", score[0]);
