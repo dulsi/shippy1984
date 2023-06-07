@@ -1,5 +1,5 @@
 CMake_Minimum_Required (VERSION 3.1)
-Project (shippy)
+Project (shippy C)
 
 #Path options
 Set (BINDIR "bin" CACHE STRING "Where to install binaries")
