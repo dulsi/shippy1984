@@ -822,7 +822,7 @@ int TrackPlayer(int objectx, int width)
 	int dist;
 	for (int i = 0; i < MAXPLAYERS; i++)
 	{
-		if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || (ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL))
+		if (ShippyObjects[i].health <= 0)
 			continue;
 		if (who == -1 || dist > abs(objectx - ShippyObjects[i].x))
 		{
@@ -1115,6 +1115,11 @@ void DoAi(int number)
 		{
 			ShippyObjects[number].x += ShippyObjects[number].level;
 
+			if (ShippyObjects[number].x < -7 || (ShippyObjects[number].x > 247))
+			{
+				ShippyObjects[number].y += 16;
+				ShippyObjects[number].level = -ShippyObjects[number].level;
+			}
 		}
 		else if (ShippyObjects[number].type == ANGRYFEZ)
 		{
@@ -1130,10 +1135,7 @@ void DoAi(int number)
 			{
 				if (ShippyObjects[number].lives != 0)
 				{
-					if (ShippyObjects[number].x < ShippyObjects[0].x - 48)
-						ShippyObjects[number].x++;
-					else if (ShippyObjects[number].x > ShippyObjects[0].x + 48)
-						ShippyObjects[number].x--;
+					ShippyObjects[number].x += TrackPlayer(ShippyObjects[number].x, 48);
 					if (ShippyObjects[number].y < ShippyObjects[number].dy)
 						ShippyObjects[number].y++;
 					else if (ShippyObjects[number].y > ShippyObjects[number].dy)
@@ -1166,22 +1168,6 @@ void DoAi(int number)
 			--ShippyObjects[number].special;
 		}
 
-		if (ShippyObjects[number].x < -7 || (ShippyObjects[number].x > 247 && ShippyObjects[number].type == ENEMYSHIPPY))
-		{
-			ShippyObjects[number].y += 16;
-			ShippyObjects[number].level = -ShippyObjects[number].level;
-			if ((ShippyObjects[number].y > 120 && ShippyObjects[number].y <= 130) || leftmonsters < 5 + level)
-			{
-				if ((ShippyObjects[number].y / 4) & 1)
-				{
-					if (ShippyObjects[number].level < 0)
-						--ShippyObjects[number].level;
-					else
-						++ShippyObjects[number].level;
-				}
-			}
-
-		}
 		for (int i = 0; i < MAXPLAYERS; i++)
 		{
 			if ((ShippyObjects[i].special == SHIPPY_SPECIAL_GAMEOVER) || (ShippyObjects[i].special == SHIPPY_SPECIAL_INITIAL))
