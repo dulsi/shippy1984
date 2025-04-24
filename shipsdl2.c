@@ -406,7 +406,7 @@ void SYSTEM_BG()
     else SDL_SetColorKey(BackBuffer,SDL_SRCCOLORKEY, SDL_MapRGB(Graphics->format, 255, 0, 255));*/
 }
 
-void SYSTEM_DRAW_BG(char *bmp)
+void SYSTEM_DRAW_BG()
 {
 	SYSTEM_CLEARSCREEN();
 	src.x = 0;

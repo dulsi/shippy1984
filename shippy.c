@@ -1768,7 +1768,7 @@ void ExecShippy()
 
 		if (operational == 30)
 		{
-			SYSTEM_BG("splash.bmp");
+			SYSTEM_BG();
 		}
 		if (operational <= 30)
 		{
