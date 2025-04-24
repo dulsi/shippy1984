@@ -21,7 +21,6 @@ No longer! Shippy1984 is the game you have been waiting for!
 
 %prep
 %setup -q
-%patch -p1 0
 mv docs html
 
 
