@@ -2,7 +2,7 @@ Name:           shippy
 Version:        1.5.5
 Release:        %autorelease
 Summary:        Space invaders / Galaxians like game with powerups
-License:        GPL+
+License:        GPL-2.0-or-later
 URL:            http://www.identicalsoftware.com/shippy1984
 Source0:        http://www.identicalsoftware.com/shippy1984/%{name}-%{version}.tgz
 BuildRequires:  gcc
